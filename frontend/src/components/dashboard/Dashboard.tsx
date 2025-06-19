@@ -50,7 +50,7 @@ const Dashboard: React.FC = () => {
     <div className="space-y-8">
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 text-white">
-        <h1 className="text-2xl font-bold">Welcome back, {user?.username}!</h1>
+        <h1 className="text-2xl font-bold">Welcome back, {user?.name}!</h1>
         <p className="mt-2 opacity-90">Continue your coding journey and reach new heights.</p>
       </div>
 

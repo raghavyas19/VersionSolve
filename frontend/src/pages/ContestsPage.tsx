@@ -74,54 +74,54 @@ const ContestsPage: React.FC = () => {
             key={contest.id}
             className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
           >
-            <div className="p-6">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3">
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+            <div className="p-4 sm:p-6">
+              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+                    <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white truncate">
                       {contest.title}
                     </h3>
                     <span className={clsx(
-                      'inline-flex px-2 py-1 text-xs font-medium rounded-full',
+                      'inline-flex px-2 py-1 text-xs font-medium rounded-full w-fit',
                       getStatusColor(contest.status)
                     )}>
                       {contest.status}
                     </span>
                   </div>
                   
-                  <p className="mt-2 text-gray-600 dark:text-gray-400">{contest.description}</p>
+                  <p className="mt-2 text-gray-600 dark:text-gray-400 text-sm sm:text-base">{contest.description}</p>
                   
-                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                     <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-                      <Calendar className="h-4 w-4" />
-                      <span>{format(contest.startTime, 'MMM dd, yyyy')}</span>
+                      <Calendar className="h-4 w-4 flex-shrink-0" />
+                      <span className="truncate">{format(contest.startTime, 'MMM dd, yyyy')}</span>
                     </div>
                     
                     <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-                      <Clock className="h-4 w-4" />
-                      <span>{getTimeRemaining(contest)}</span>
+                      <Clock className="h-4 w-4 flex-shrink-0" />
+                      <span className="truncate">{getTimeRemaining(contest)}</span>
                     </div>
                     
                     <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-                      <Users className="h-4 w-4" />
+                      <Users className="h-4 w-4 flex-shrink-0" />
                       <span>{contest.participants.toLocaleString()} participants</span>
                     </div>
                   </div>
                   
                   <div className="mt-4 flex items-center space-x-2">
-                    <Trophy className="h-4 w-4 text-yellow-500" />
+                    <Trophy className="h-4 w-4 text-yellow-500 flex-shrink-0" />
                     <span className="text-sm text-gray-600 dark:text-gray-400">
                       {contest.problems.length} problems • {contest.type}
                     </span>
                   </div>
                 </div>
                 
-                <div className="ml-6 flex flex-col space-y-2">
+                <div className="flex flex-col sm:flex-row lg:flex-col gap-2 lg:ml-6">
                   {contest.status === 'Running' && (
                     <button 
                       onClick={() => handleContestAction(contest.id, 'join')}
                       className={clsx(
-                        'flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors',
+                        'flex items-center justify-center space-x-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium',
                         user 
                           ? 'bg-green-600 text-white hover:bg-green-700'
                           : 'bg-gray-600 text-white hover:bg-gray-700'
@@ -136,7 +136,7 @@ const ContestsPage: React.FC = () => {
                     <button 
                       onClick={() => handleContestAction(contest.id, 'register')}
                       className={clsx(
-                        'flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors',
+                        'flex items-center justify-center space-x-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium',
                         user 
                           ? 'bg-blue-600 text-white hover:bg-blue-700'
                           : 'bg-gray-600 text-white hover:bg-gray-700'
@@ -149,7 +149,7 @@ const ContestsPage: React.FC = () => {
                   
                   <Link
                     to={`/contests/${contest.id}`}
-                    className="flex items-center justify-center space-x-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    className="flex items-center justify-center space-x-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-medium"
                   >
                     <span>View Details</span>
                   </Link>
@@ -158,8 +158,8 @@ const ContestsPage: React.FC = () => {
             </div>
             
             {contest.status === 'Running' && (
-              <div className="px-6 py-3 bg-green-50 dark:bg-green-900/10 border-t border-green-200 dark:border-green-800">
-                <div className="flex items-center justify-between">
+              <div className="px-4 sm:px-6 py-3 bg-green-50 dark:bg-green-900/10 border-t border-green-200 dark:border-green-800">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <span className="text-sm font-medium text-green-800 dark:text-green-200">
                     Contest is live!
                   </span>

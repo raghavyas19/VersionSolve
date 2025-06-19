@@ -2,10 +2,10 @@ import React, { useState, useRef } from 'react';
 import { Editor } from '@monaco-editor/react';
 import { 
   Play, 
-  Save, 
+  // Save, 
   Download, 
   Upload, 
-  Settings, 
+  // Settings, 
   Terminal, 
   CheckCircle2, 
   XCircle, 
@@ -14,20 +14,28 @@ import {
   Sparkles,
   FileText,
   Code2,
-  ArrowLeft
+  ArrowLeft,
+  Moon,
+  Sun
 } from 'lucide-react';
 import { Language, ExecutionResult, AIReview } from '../../types';
 import { LANGUAGES } from '../../utils/constants';
-import { executeCodeWithInput, generateAIReview } from '../../utils/codeExecution';
+import { generateAIReview } from '../../utils/codeExecution';
 import { useTheme } from '../../contexts/ThemeContext';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { clsx } from 'clsx';
 import { Link } from 'react-router-dom';
 
 const OnlineCompiler: React.FC = () => {
-  const { theme } = useTheme();
-  const [selectedLanguage, setSelectedLanguage] = useState<Language>('python');
-  const [code, setCode] = useState(LANGUAGES[selectedLanguage].template);
+  const { theme, toggleTheme } = useTheme();
+  const [selectedLanguage, setSelectedLanguage] = useState<Language>(() => {
+    return (localStorage.getItem('compiler_language') as Language) || 'python';
+  });
+  const [code, setCode] = useState(() => {
+    const saved = localStorage.getItem('compiler_code');
+    if (saved) return saved;
+    return LANGUAGES[(localStorage.getItem('compiler_language') as Language) || 'python'].template;
+  });
   const [input, setInput] = useState('');
   const [output, setOutput] = useState('');
   const [isRunning, setIsRunning] = useState(false);
@@ -41,11 +49,14 @@ const OnlineCompiler: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleLanguageChange = (language: Language) => {
+    if (!['c', 'cpp', 'python', 'java'].includes(language)) return;
     setSelectedLanguage(language);
     setCode(LANGUAGES[language].template);
     setOutput('');
     setExecutionResult(null);
     setAiReview(null);
+    localStorage.setItem('compiler_language', language);
+    localStorage.setItem('compiler_code', LANGUAGES[language].template);
   };
 
   const handleRunCode = async () => {
@@ -56,11 +67,22 @@ const OnlineCompiler: React.FC = () => {
     setOutput('Running...');
     
     try {
-      const result = await executeCodeWithInput(code, selectedLanguage, input);
-      setExecutionResult(result);
-      setOutput(result.output || result.error || 'No output');
-    } catch (error) {
-      setOutput('Error: ' + error);
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:3000/api/compiler/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ code, input, language: selectedLanguage }),
+      });
+      const data = await response.json();
+      if (data.error) throw new Error(data.error);
+      setExecutionResult({ success: !data.compileError && !data.runtimeError, output: data.result || '', executionTime: data.executionTime || 0, memoryUsage: data.memoryUsage || 0, compileError: data.compileError, runtimeError: data.runtimeError });
+      setOutput(data.result || 'No output');
+    } catch (error: any) { // Explicitly type error as 'any' to resolve unknown type
+      setExecutionResult({ success: false, output: '', executionTime: 0, memoryUsage: 0, error: error.message });
+      setOutput(`Error: ${error.message}`);
     } finally {
       setIsRunning(false);
     }
@@ -99,6 +121,7 @@ const OnlineCompiler: React.FC = () => {
       reader.onload = (e) => {
         const content = e.target?.result as string;
         setCode(content);
+        localStorage.setItem('compiler_code', content);
       };
       reader.readAsText(file);
     }
@@ -111,6 +134,14 @@ const OnlineCompiler: React.FC = () => {
     setExecutionResult(null);
     setAiReview(null);
   };
+
+  // Persist code on change
+  React.useEffect(() => {
+    localStorage.setItem('compiler_code', code);
+  }, [code]);
+  React.useEffect(() => {
+    localStorage.setItem('compiler_language', selectedLanguage);
+  }, [selectedLanguage]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -134,7 +165,7 @@ const OnlineCompiler: React.FC = () => {
               onChange={(e) => handleLanguageChange(e.target.value as Language)}
               className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              {Object.entries(LANGUAGES).map(([key, lang]) => (
+              {Object.entries(LANGUAGES).filter(([key]) => ['c', 'cpp', 'python', 'java'].includes(key)).map(([key, lang]) => (
                 <option key={key} value={key}>{lang.name}</option>
               ))}
             </select>
@@ -142,10 +173,11 @@ const OnlineCompiler: React.FC = () => {
           
           <div className="flex items-center space-x-2">
             <button
-              onClick={() => setShowSettings(!showSettings)}
+              onClick={toggleTheme}
               className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+              aria-label="Toggle theme"
             >
-              <Settings className="h-4 w-4" />
+              {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
             </button>
             
             <input
@@ -247,7 +279,7 @@ const OnlineCompiler: React.FC = () => {
                   tabSize: 2,
                   lineNumbers: 'on',
                   folding: true,
-                  bracketMatching: 'always',
+                  matchBrackets: "always",
                   autoIndent: 'full',
                 }}
               />
@@ -339,6 +371,12 @@ const OnlineCompiler: React.FC = () => {
                   <pre className="w-full h-64 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white text-sm font-mono overflow-auto whitespace-pre-wrap">
                     {output || 'Output will appear here after running your code...'}
                   </pre>
+                  {(executionResult && (executionResult.error || executionResult.compileError || executionResult.runtimeError)) && (
+                    <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm rounded">
+                      <strong>Error:</strong><br />
+                      {executionResult.compileError || executionResult.runtimeError || executionResult.error}
+                    </div>
+                  )}
                 </div>
               </div>
             )}

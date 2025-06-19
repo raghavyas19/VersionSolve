@@ -52,18 +52,18 @@ const ProblemDetail: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+    <div className="max-w-7xl mx-auto space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center space-x-4 min-w-0 flex-1">
           <Link
             to="/problems"
-            className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+            className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors flex-shrink-0"
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{problem.title}</h1>
-            <div className="flex items-center space-x-4 mt-2">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate">{problem.title}</h1>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2">
               <span className={clsx(
                 'inline-flex px-2 py-1 text-xs font-medium rounded-full',
                 DIFFICULTY_COLORS[problem.difficulty]
@@ -80,7 +80,7 @@ const ProblemDetail: React.FC = () => {
         <button
           onClick={handleSolveProblem}
           className={clsx(
-            'flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors',
+            'flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors whitespace-nowrap',
             user 
               ? 'bg-blue-600 text-white hover:bg-blue-700'
               : 'bg-gray-600 text-white hover:bg-gray-700'
@@ -103,13 +103,13 @@ const ProblemDetail: React.FC = () => {
       {/* Login Prompt Modal */}
       {showLoginPrompt && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
             <div className="text-center">
               <Lock className="h-12 w-12 text-blue-500 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                 Login Required
               </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
+              <p className="text-gray-600 dark:text-gray-400 mb-6 text-sm">
                 You need to be logged in to submit solutions. After logging in, you'll be redirected back to this problem.
               </p>
               <div className="flex flex-col space-y-3">
@@ -141,7 +141,7 @@ const ProblemDetail: React.FC = () => {
         <div className="lg:col-span-3">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
             <div className="border-b border-gray-200 dark:border-gray-700">
-              <nav className="flex space-x-8 px-6">
+              <nav className="flex space-x-4 sm:space-x-8 px-4 sm:px-6 overflow-x-auto">
                 {[
                   { id: 'description', name: 'Description' },
                   { id: 'submissions', name: 'Submissions' },
@@ -151,7 +151,7 @@ const ProblemDetail: React.FC = () => {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as any)}
                     className={clsx(
-                      'py-4 px-1 border-b-2 font-medium text-sm transition-colors',
+                      'py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap',
                       activeTab === tab.id
                         ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                         : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
@@ -163,7 +163,7 @@ const ProblemDetail: React.FC = () => {
               </nav>
             </div>
 
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               {activeTab === 'description' && (
                 <div className="prose dark:prose-invert max-w-none">
                   <div dangerouslySetInnerHTML={{ __html: problem.description.replace(/\n/g, '<br>') }} />

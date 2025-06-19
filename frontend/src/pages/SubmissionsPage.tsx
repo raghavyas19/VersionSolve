@@ -33,22 +33,22 @@ const SubmissionsPage: React.FC = () => {
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Problem
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="hidden sm:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Language
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="hidden md:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Runtime
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="hidden md:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Memory
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Submitted
                 </th>
               </tr>
@@ -60,9 +60,9 @@ const SubmissionsPage: React.FC = () => {
                 
                 return (
                   <tr key={submission.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                    <td className="px-6 py-4">
+                    <td className="px-4 sm:px-6 py-4">
                       <div>
-                        <div className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
+                        <div className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 truncate">
                           {problem?.title || 'Unknown Problem'}
                         </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -70,7 +70,7 @@ const SubmissionsPage: React.FC = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="hidden sm:table-cell px-4 sm:px-6 py-4">
                       <div className="flex items-center space-x-2">
                         <Code className="h-4 w-4 text-gray-400" />
                         <span className="text-sm font-medium text-gray-900 dark:text-white capitalize">
@@ -78,10 +78,10 @@ const SubmissionsPage: React.FC = () => {
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 sm:px-6 py-4">
                       <div className="flex items-center space-x-2">
                         <VerdictIcon className={clsx(
-                          'h-4 w-4',
+                          'h-4 w-4 flex-shrink-0',
                           submission.status === 'Accepted' ? 'text-green-500' : 'text-red-500'
                         )} />
                         <span className={clsx(
@@ -92,16 +92,16 @@ const SubmissionsPage: React.FC = () => {
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                    <td className="hidden md:table-cell px-4 sm:px-6 py-4 text-sm text-gray-900 dark:text-white">
                       {submission.executionTime ? `${submission.executionTime}ms` : '-'}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                    <td className="hidden md:table-cell px-4 sm:px-6 py-4 text-sm text-gray-900 dark:text-white">
                       {submission.memoryUsage ? `${submission.memoryUsage.toFixed(1)}MB` : '-'}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                    <td className="px-4 sm:px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                       <div className="flex items-center space-x-1">
-                        <Clock className="h-3 w-3" />
-                        <span>{formatDistanceToNow(submission.submittedAt, { addSuffix: true })}</span>
+                        <Clock className="h-3 w-3 flex-shrink-0" />
+                        <span className="truncate">{formatDistanceToNow(submission.submittedAt, { addSuffix: true })}</span>
                       </div>
                     </td>
                   </tr>

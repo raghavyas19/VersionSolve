@@ -8,6 +8,7 @@ export interface User {
   submissions: number;
   avatar?: string;
   joinedAt: Date;
+  name?: string;
 }
 
 export interface Problem {
@@ -106,17 +107,28 @@ export interface CompilerOutput {
 }
 
 export interface ExecutionResult {
-  testCase?: TestCase;
-  output: string;
   success: boolean;
+  output: string;
   executionTime: number;
   memoryUsage: number;
-  error?: string;
-  input?: string;
-  expectedOutput?: string;
+  error?: string; // Optional error message
+  compileError?: string; // Optional compilation error
+  runtimeError?: string; // Optional runtime error
 }
 
-export type Language = 'cpp' | 'java' | 'python' | 'javascript' | 'c' | 'go' | 'rust';
+export interface AIReview {
+  codeQuality: number;
+  readabilityScore: number;
+  complexityAnalysis: {
+    time: string;
+    space: string;
+  };
+  optimizationSuggestions: string[];
+  bestPractices: string[];
+  styleIssues: string[];
+}
+
+export type Language = 'c' | 'cpp' | 'python' | 'java';
 
 export interface LanguageConfig {
   name: string;

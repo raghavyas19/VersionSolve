@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Editor } from '@monaco-editor/react';
 import { Play, Save, ArrowLeft, Settings, Terminal, CheckCircle2, XCircle, Clock, MemoryStick } from 'lucide-react';
 import { Problem, Language, ExecutionResult } from '../../types';
@@ -7,6 +7,7 @@ import { compileCode, runTestCases } from '../../utils/codeExecution';
 import { useTheme } from '../../contexts/ThemeContext';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { clsx } from 'clsx';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface CodeEditorProps {
   problem: Problem;
@@ -15,6 +16,7 @@ interface CodeEditorProps {
 
 const CodeEditor: React.FC<CodeEditorProps> = ({ problem, onBack }) => {
   const { theme } = useTheme();
+  const { user } = useAuth();
   const [selectedLanguage, setSelectedLanguage] = useState<Language>('python');
   const [code, setCode] = useState(LANGUAGES[selectedLanguage].template);
   const [isRunning, setIsRunning] = useState(false);
@@ -23,6 +25,28 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ problem, onBack }) => {
   const [customOutput, setCustomOutput] = useState('');
   const [activeTab, setActiveTab] = useState<'testcases' | 'result' | 'custom'>('testcases');
   const editorRef = useRef<any>(null);
+
+  // User-specific localStorage key
+  const getStorageKey = () => {
+    return `code_${user?.id || 'guest'}_${problem.id}_${selectedLanguage}`;
+  };
+
+  // Load code from localStorage on mount/user/problem/language change
+  useEffect(() => {
+    const saved = localStorage.getItem(getStorageKey());
+    if (saved) {
+      setCode(saved);
+    } else {
+      setCode(LANGUAGES[selectedLanguage].template);
+    }
+    // eslint-disable-next-line
+  }, [user?.id, problem.id, selectedLanguage]);
+
+  // Save code to localStorage on change
+  useEffect(() => {
+    localStorage.setItem(getStorageKey(), code);
+    // eslint-disable-next-line
+  }, [code, user?.id, problem.id, selectedLanguage]);
 
   const handleLanguageChange = (language: Language) => {
     setSelectedLanguage(language);

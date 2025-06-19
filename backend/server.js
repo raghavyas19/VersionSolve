@@ -1,0 +1,47 @@
+require('dotenv').config();
+const express = require('express');
+const authRouter = require('./routes/auth');
+const compilerRouter = require('./routes/compiler');
+const problemRouter = require('./routes/problem');
+const passport = require('passport');
+const session = require('express-session');
+const connectDB = require('./config/db');
+const cors = require('cors');
+const jwt = require('jsonwebtoken');
+
+const app = express();
+
+// Load passport configuration
+require('./config/passport');
+
+app.use(express.json());
+app.use(cors({ origin: 'http://localhost:5173' }));
+app.use(session({ secret: 'your-secret-key', resave: false, saveUninitialized: false }));
+app.use(passport.initialize());
+app.use(passport.session());
+
+// JWT Middleware
+const authenticateJWT = (req, res, next) => {
+  const token = req.headers['authorization']?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'No token provided' });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    req.user = decoded;
+    next();
+  } catch (error) {
+    res.status(401).json({ error: 'Invalid token' });
+  }
+};
+
+app.use('/api/auth', authRouter);
+app.use('/api/compiler', authenticateJWT, compilerRouter); // Protect compiler route
+app.use('/api/problem', problemRouter);
+
+connectDB();
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});

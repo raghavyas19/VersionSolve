@@ -57,18 +57,18 @@ const LeaderboardPage: React.FC = () => {
       {/* Guest User Overlay */}
       {!user && (
         <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm z-10 flex items-center justify-center">
-          <div className="text-center p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 max-w-md mx-4">
-            <Lock className="h-16 w-16 text-blue-500 mx-auto mb-4" />
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          <div className="text-center p-6 sm:p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 max-w-md mx-4">
+            <Lock className="h-12 sm:h-16 w-12 sm:w-16 text-blue-500 mx-auto mb-4" />
+            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2">
               Join the Competition
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
+            <p className="text-gray-600 dark:text-gray-400 mb-6 text-sm sm:text-base">
               Sign in to view the leaderboard and see where you rank among the top coders in our community.
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={handleLoginRedirect}
-                className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                className="flex-1 px-4 sm:px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm sm:text-base"
               >
                 Sign In
               </button>
@@ -77,7 +77,7 @@ const LeaderboardPage: React.FC = () => {
                   setRedirectPath('/leaderboard');
                   navigate('/signup', { state: { from: '/leaderboard' } });
                 }}
-                className="flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+                className="flex-1 px-4 sm:px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium text-sm sm:text-base"
               >
                 Sign Up
               </button>
@@ -98,7 +98,7 @@ const LeaderboardPage: React.FC = () => {
               key={option.key}
               onClick={() => setTimeframe(option.key as any)}
               className={clsx(
-                'px-4 py-2 text-sm font-medium rounded-md transition-colors',
+                'px-3 sm:px-4 py-2 text-sm font-medium rounded-md transition-colors',
                 timeframe === option.key
                   ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
@@ -111,7 +111,7 @@ const LeaderboardPage: React.FC = () => {
       </div>
 
       {/* Top 3 Podium */}
-      <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="mb-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
         {sortedUsers.slice(0, 3).map((user, index) => {
           const rank = index + 1;
           const badge = getRatingBadge(user.rating);
@@ -120,7 +120,7 @@ const LeaderboardPage: React.FC = () => {
             <div
               key={user.id}
               className={clsx(
-                'bg-white dark:bg-gray-800 rounded-lg shadow-sm border-2 p-6 text-center',
+                'bg-white dark:bg-gray-800 rounded-lg shadow-sm border-2 p-4 sm:p-6 text-center',
                 rank === 1 ? 'border-yellow-200 dark:border-yellow-700' :
                 rank === 2 ? 'border-gray-200 dark:border-gray-600' :
                 'border-amber-200 dark:border-amber-700'
@@ -131,17 +131,17 @@ const LeaderboardPage: React.FC = () => {
               </div>
               
               <div className="mb-4">
-                <div className="w-16 h-16 mx-auto bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center mb-3">
-                  <User className="h-8 w-8 text-gray-500 dark:text-gray-400" />
+                <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center mb-3">
+                  <User className="h-6 w-6 sm:h-8 sm:w-8 text-gray-500 dark:text-gray-400" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{user.username}</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate">{user.name}</h3>
                 <span className={clsx('inline-flex px-2 py-1 text-xs font-medium rounded-full mt-1', badge.color)}>
                   {badge.label}
                 </span>
               </div>
               
               <div className="space-y-2 text-sm">
-                <div className={clsx('text-2xl font-bold', getRatingColor(user.rating))}>
+                <div className={clsx('text-xl sm:text-2xl font-bold', getRatingColor(user.rating))}>
                   {user.rating}
                 </div>
                 <div className="text-gray-600 dark:text-gray-400">
@@ -159,22 +159,22 @@ const LeaderboardPage: React.FC = () => {
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Rank
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   User
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Rating
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="hidden sm:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Problems Solved
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="hidden md:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Submissions
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Level
                 </th>
               </tr>
@@ -186,41 +186,38 @@ const LeaderboardPage: React.FC = () => {
                 
                 return (
                   <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         {getRankIcon(rank)}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                          <User className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
+                          <User className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500 dark:text-gray-400" />
                         </div>
-                        <div>
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">
-                            {user.username}
-                          </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            {user.email}
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                            {user.name}
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center space-x-2">
-                        <TrendingUp className="h-4 w-4 text-green-500" />
-                        <span className={clsx('text-lg font-semibold', getRatingColor(user.rating))}>
+                        <TrendingUp className="h-4 w-4 text-green-500 flex-shrink-0" />
+                        <span className={clsx('text-base sm:text-lg font-semibold', getRatingColor(user.rating))}>
                           {user.rating}
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="hidden sm:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {user.solvedProblems}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="hidden md:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {user.submissions}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                       <span className={clsx('inline-flex px-2 py-1 text-xs font-medium rounded-full', badge.color)}>
                         {badge.label}
                       </span>

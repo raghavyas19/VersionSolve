@@ -1,13 +1,15 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '../types';
+import api from '../utils/api';
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (contact: string, password: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
   redirectPath: string | null;
   setRedirectPath: (path: string | null) => void;
+  setUser: (user: User | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,43 +28,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [redirectPath, setRedirectPath] = useState<string | null>(null);
 
   useEffect(() => {
-    // Simulate checking for stored authentication
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    const token = localStorage.getItem('token');
+    if (token) {
+      const verifyToken = async () => {
+        try {
+          const response = await api.get('/auth/verify');
+          setUser(response.data.user || null); // Ensure user is set even if response.data.user is undefined
+        } catch (err) {
+          console.error('Token verification error:', err);
+          localStorage.removeItem('token');
+          setUser(null);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      verifyToken();
+    } else {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Mock authentication - in real app, this would call your API
-    const mockUser: User = {
-      id: '1',
-      username: email === 'admin@versionsolve.com' ? 'admin' : 'user123',
-      email,
-      role: email === 'admin@versionsolve.com' ? 'admin' : 'user',
-      rating: 1456,
-      solvedProblems: 42,
-      submissions: 128,
-      joinedAt: new Date('2023-01-15'),
-    };
-
-    setUser(mockUser);
-    localStorage.setItem('user', JSON.stringify(mockUser));
-    return true;
+  const login = async (contact: string, password: string): Promise<boolean> => {
+    try {
+      const response = await api.post('/auth/login', { username: contact, password });
+      const { token } = response.data;
+      localStorage.setItem('token', token);
+      const verifyResponse = await api.get('/auth/verify');
+      setUser(verifyResponse.data.user || null);
+      return true;
+    } catch (err) {
+      console.error('Login error:', err);
+      return false;
+    }
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('user');
+    localStorage.removeItem('token');
     setRedirectPath(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading, redirectPath, setRedirectPath }}>
+    <AuthContext.Provider value={{ user, login, logout, isLoading, redirectPath, setRedirectPath, setUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -26,7 +26,7 @@ const Sidebar: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const navigation = [
-    ...(user ? [{ name: 'Dashboard', href: '/', icon: Home }] : []),
+    ...(user ? [{ name: 'Dashboard', href: '/dashboard', icon: Home }] : []),
     { name: 'Online Compiler', href: '/compiler', icon: Terminal },
     { name: 'Problems', href: '/problems', icon: BookOpen },
     { name: 'Contests', href: '/contests', icon: Trophy },
@@ -64,28 +64,27 @@ const Sidebar: React.FC = () => {
 
       {/* Sidebar */}
       <div className={clsx(
-        'fixed inset-y-0 left-0 z-50 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 pt-16 transition-all duration-300 ease-in-out',
-        // Desktop: always show with icons only or full width
-        'lg:w-64',
+        'fixed top-16 left-0 bottom-0 z-50 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 ease-in-out overflow-y-auto',
+        // Desktop: always show full width
+        'lg:w-64 lg:translate-x-0',
         // Mobile: collapsed (icons only) or expanded (full width)
-        isExpanded ? 'w-64' : 'w-16',
-        // Mobile expanded state
-        'lg:translate-x-0',
-        isExpanded ? 'translate-x-0' : 'translate-x-0'
+        isExpanded ? 'w-64 translate-x-0' : 'w-16 translate-x-0'
       )}>
-        {/* Hamburger Menu Button */}
-        <button
-          onClick={toggleSidebar}
-          className="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors lg:hidden"
-        >
-          {isExpanded ? (
-            <X className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-          ) : (
-            <Menu className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-          )}
-        </button>
+        {/* Hamburger Menu Button - Only on Mobile */}
+        <div className="lg:hidden p-2 border-b border-gray-200 dark:border-gray-700">
+          <button
+            onClick={toggleSidebar}
+            className="w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-center"
+          >
+            {isExpanded ? (
+              <X className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+            ) : (
+              <Menu className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+            )}
+          </button>
+        </div>
 
-        <div className="flex flex-col h-full overflow-y-auto">
+        <div className="flex flex-col h-full">
           <nav className="flex-1 px-2 py-6 space-y-2">
             {/* Main Navigation */}
             {navigation.map((item) => {
@@ -101,7 +100,7 @@ const Sidebar: React.FC = () => {
                       ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-200'
                       : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
                   )}
-                  title={!isExpanded ? item.name : undefined}
+                  title={!isExpanded && window.innerWidth < 1024 ? item.name : undefined}
                 >
                   <item.icon className="h-5 w-5 flex-shrink-0" />
                   <span className={clsx(
@@ -123,7 +122,7 @@ const Sidebar: React.FC = () => {
                   <div
                     key={item.name}
                     className="flex items-center px-3 py-2 text-sm font-medium rounded-lg text-gray-400 dark:text-gray-500 cursor-not-allowed group"
-                    title={!isExpanded ? `${item.name} (Login Required)` : undefined}
+                    title={!isExpanded && window.innerWidth < 1024 ? `${item.name} (Login Required)` : undefined}
                   >
                     <Lock className="h-5 w-5 flex-shrink-0" />
                     <span className={clsx(
@@ -147,7 +146,7 @@ const Sidebar: React.FC = () => {
                       ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-200'
                       : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
                   )}
-                  title={!isExpanded ? item.name : undefined}
+                  title={!isExpanded && window.innerWidth < 1024 ? item.name : undefined}
                 >
                   <item.icon className="h-5 w-5 flex-shrink-0" />
                   <span className={clsx(
@@ -184,7 +183,7 @@ const Sidebar: React.FC = () => {
                           ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-200'
                           : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
                       )}
-                      title={!isExpanded ? item.name : undefined}
+                      title={!isExpanded && window.innerWidth < 1024 ? item.name : undefined}
                     >
                       <item.icon className="h-5 w-5 flex-shrink-0" />
                       <span className={clsx(

@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import Layout from './components/common/Layout';
@@ -28,7 +28,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
     );
   }
   
-  return user ? <>{children}</> : <Navigate to="/login" />;
+  return user ? <>{children}</> : <Navigate to="/login" replace />;
 };
 
 const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -43,14 +43,50 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   }
   
   if (!user) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" replace />;
   }
   
   if (user.role !== 'admin') {
-    return <Navigate to="/" />;
+    return <Navigate to="/dashboard" replace />;
   }
   
   return <>{children}</>;
+};
+
+const AuthHandler: React.FC = () => {
+  const { setUser } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const token = params.get('token');
+    if (token) {
+      localStorage.setItem('token', token);
+      params.delete('token');
+      // Verify token and update user
+      import('./utils/api').then(({ default: api }) => {
+        api.get('/auth/verify')
+          .then(res => {
+            setUser(res.data.user || null);
+            navigate('/dashboard', { replace: true });
+          })
+          .catch(() => {
+            setUser(null);
+            navigate('/login', { replace: true });
+          });
+      });
+    } else {
+      navigate('/login', { replace: true });
+    }
+    // eslint-disable-next-line
+  }, []);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <LoadingSpinner size="lg" />
+    </div>
+  );
 };
 
 const AppRoutes: React.FC = () => {
@@ -67,31 +103,31 @@ const AppRoutes: React.FC = () => {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/login" element={user ? <Navigate to="/" /> : <LoginForm />} />
-      <Route path="/signup" element={user ? <Navigate to="/" /> : <SignupForm />} />
+      <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <LoginForm />} />
+      <Route path="/signup" element={user ? <Navigate to="/dashboard" replace /> : <SignupForm />} />
       <Route path="/compiler" element={<OnlineCompiler />} />
-      
       {/* Landing page for non-authenticated users */}
-      {!user && <Route path="/" element={<LandingPage />} />}
-      
+      <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
       {/* Main app routes with Layout */}
-      <Route path="/" element={<Layout />}>
-        {/* Dashboard only for authenticated users */}
-        {user && <Route index element={<Dashboard />} />}
-        
+      <Route path="/" element={<Layout />}> 
+        {/* Dashboard only for authenticated users, with AuthHandler for Google OAuth */}
+        <Route path="dashboard" element={
+          window.location.search.includes('token=') ? <AuthHandler /> :
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        } />
         {/* Public pages accessible to guests */}
         <Route path="problems" element={<ProblemsPage />} />
         <Route path="problems/:id" element={<ProblemDetail />} />
         <Route path="contests" element={<ContestsPage />} />
         <Route path="leaderboard" element={<LeaderboardPage />} />
-        
         {/* Protected routes requiring authentication */}
         <Route path="submissions" element={
           <ProtectedRoute>
             <SubmissionsPage />
           </ProtectedRoute>
         } />
-        
         {/* Admin routes */}
         <Route path="admin" element={
           <AdminRoute>
@@ -104,9 +140,8 @@ const AppRoutes: React.FC = () => {
           </AdminRoute>
         } />
       </Route>
-      
       {/* Redirect unknown routes */}
-      <Route path="*" element={<Navigate to="/" />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };

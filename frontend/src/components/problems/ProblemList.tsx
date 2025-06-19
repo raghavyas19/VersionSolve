@@ -101,20 +101,20 @@ const ProblemList: React.FC = () => {
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Problem
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Difficulty
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="hidden sm:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Acceptance
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="hidden md:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Tags
                 </th>
                 {!user && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Action
                   </th>
                 )}
@@ -127,17 +127,17 @@ const ProblemList: React.FC = () => {
                   className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                   onClick={(e) => handleProblemClick(problem.id, e)}
                 >
-                  <td className="px-6 py-4">
+                  <td className="px-4 sm:px-6 py-4">
                     <div className="flex items-center space-x-3">
-                      {user && <CheckCircle2 className="h-5 w-5 text-green-500" />}
-                      <div>
+                      {user && <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />}
+                      <div className="min-w-0 flex-1">
                         <Link
                           to={`/problems/${problem.id}`}
-                          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-colors"
+                          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-colors block truncate"
                         >
                           {problem.title}
                         </Link>
-                        <div className="flex items-center mt-1 text-sm text-gray-500 dark:text-gray-400 space-x-4">
+                        <div className="flex items-center mt-1 text-sm text-gray-500 dark:text-gray-400 space-x-2 sm:space-x-4">
                           <span className="flex items-center space-x-1">
                             <Users className="h-3 w-3" />
                             <span>{problem.submissions}</span>
@@ -150,7 +150,7 @@ const ProblemList: React.FC = () => {
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 sm:px-6 py-4">
                     <span className={clsx(
                       'inline-flex px-2 py-1 text-xs font-medium rounded-full',
                       DIFFICULTY_COLORS[problem.difficulty]
@@ -158,12 +158,12 @@ const ProblemList: React.FC = () => {
                       {problem.difficulty}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                  <td className="hidden sm:table-cell px-4 sm:px-6 py-4 text-sm text-gray-900 dark:text-white">
                     {problem.acceptanceRate.toFixed(1)}%
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="hidden md:table-cell px-4 sm:px-6 py-4">
                     <div className="flex flex-wrap gap-1">
-                      {problem.tags.slice(0, 3).map((tag) => (
+                      {problem.tags.slice(0, 2).map((tag) => (
                         <span
                           key={tag}
                           className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded"
@@ -171,18 +171,18 @@ const ProblemList: React.FC = () => {
                           {tag}
                         </span>
                       ))}
-                      {problem.tags.length > 3 && (
+                      {problem.tags.length > 2 && (
                         <span className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded">
-                          +{problem.tags.length - 3}
+                          +{problem.tags.length - 2}
                         </span>
                       )}
                     </div>
                   </td>
                   {!user && (
-                    <td className="px-6 py-4">
-                      <div className="flex space-x-2">
+                    <td className="px-4 sm:px-6 py-4">
+                      <div className="flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-2">
                         <button
-                          className="solve-button flex items-center space-x-1 px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                          className="solve-button flex items-center justify-center space-x-1 px-2 sm:px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
@@ -190,17 +190,18 @@ const ProblemList: React.FC = () => {
                           }}
                         >
                           <Lock className="h-3 w-3" />
-                          <span>Sign In</span>
+                          <span className="hidden sm:inline">Sign In</span>
                         </button>
                         <button
-                          className="solve-button flex items-center space-x-1 px-3 py-1 text-xs border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                          className="solve-button flex items-center justify-center space-x-1 px-2 sm:px-3 py-1 text-xs border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
                             handleLoginToSolve(problem.id, 'signup');
                           }}
                         >
-                          <span>Sign Up</span>
+                          <span className="hidden sm:inline">Sign Up</span>
+                          <span className="sm:hidden">+</span>
                         </button>
                       </div>
                     </td>

@@ -1,0 +1,18 @@
+# Node and general
+node_modules/
+.env
+.DS_Store
+*.log
+
+# Docker
+docker-compose.override.yml
+*.local
+*.env
+*.pid
+
+# VSCode or IDE
+.vscode/
+.idea/
+
+# Mac system files
+.DS_Store

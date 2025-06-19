@@ -91,27 +91,27 @@ const LandingPage: React.FC = () => {
       </div>
 
       {/* Navigation */}
-      <nav className="relative z-50 px-6 py-4">
+      <nav className="relative z-50 px-4 sm:px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Code2 className="h-8 w-8 text-blue-400" />
-            <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+            <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
               VersionSolve
             </span>
           </div>
           
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-6 lg:space-x-8">
             <Link to="/problems" className="hover:text-blue-400 transition-colors">Problems</Link>
             <Link to="/contests" className="hover:text-blue-400 transition-colors">Contests</Link>
             <Link to="/leaderboard" className="hover:text-blue-400 transition-colors">Leaderboard</Link>
             <Link to="/compiler" className="hover:text-blue-400 transition-colors">Compiler</Link>
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4">
             {user ? (
               <Link
-                to="/"
-                className="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full hover:from-blue-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-105"
+                to="/dashboard"
+                className="px-4 sm:px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full hover:from-blue-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-105 text-sm sm:text-base"
               >
                 Dashboard
               </Link>
@@ -119,13 +119,13 @@ const LandingPage: React.FC = () => {
               <>
                 <Link
                   to="/login"
-                  className="px-4 py-2 text-gray-300 hover:text-white transition-colors"
+                  className="px-3 sm:px-4 py-2 text-gray-300 hover:text-white transition-colors text-sm sm:text-base"
                 >
                   Sign In
                 </Link>
                 <Link
                   to="/signup"
-                  className="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full hover:from-blue-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-105"
+                  className="px-4 sm:px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full hover:from-blue-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-105 text-sm sm:text-base"
                 >
                   Get Started
                 </Link>
@@ -136,21 +136,21 @@ const LandingPage: React.FC = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative z-10 px-6 py-20">
+      <section className="relative z-10 px-4 sm:px-6 py-12 sm:py-20">
         <div className="max-w-7xl mx-auto text-center">
           <div className={`transition-all duration-1000 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-            <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent leading-tight">
+            <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent leading-tight">
               Code. Compete. Conquer.
             </h1>
-            <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-lg sm:text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed px-4">
               Master programming with our advanced online judge platform. 
               Solve problems, join contests, and get AI-powered code reviews.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12 px-4">
               <Link
                 to="/problems"
-                className="group px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full text-lg font-semibold hover:from-blue-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-105 flex items-center space-x-2"
+                className="group w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full text-lg font-semibold hover:from-blue-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2"
               >
                 <span>Start Solving</span>
                 <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
@@ -158,7 +158,7 @@ const LandingPage: React.FC = () => {
               
               <Link
                 to="/compiler"
-                className="group px-8 py-4 border-2 border-gray-400 rounded-full text-lg font-semibold hover:border-white hover:bg-white hover:text-gray-900 transition-all duration-300 flex items-center space-x-2"
+                className="group w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 border-2 border-gray-400 rounded-full text-lg font-semibold hover:border-white hover:bg-white hover:text-gray-900 transition-all duration-300 flex items-center justify-center space-x-2"
               >
                 <Play className="h-5 w-5" />
                 <span>Try Compiler</span>
@@ -166,18 +166,18 @@ const LandingPage: React.FC = () => {
             </div>
 
             {/* Quick Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 max-w-4xl mx-auto px-4">
               {stats.map((stat, index) => (
                 <div 
                   key={stat.label}
                   className={`transition-all duration-1000 delay-${index * 200} transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}
                 >
                   <div className="text-center group hover:scale-105 transition-transform duration-300">
-                    <stat.icon className="h-8 w-8 mx-auto mb-2 text-blue-400 group-hover:text-purple-400 transition-colors" />
-                    <div className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                    <stat.icon className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-blue-400 group-hover:text-purple-400 transition-colors" />
+                    <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                       {stat.number}
                     </div>
-                    <div className="text-gray-400 text-sm">{stat.label}</div>
+                    <div className="text-gray-400 text-xs sm:text-sm">{stat.label}</div>
                   </div>
                 </div>
               ))}
@@ -192,37 +192,37 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Features Section */}
-      <section className="relative z-10 px-6 py-20 bg-black bg-opacity-20 backdrop-blur-sm">
+      <section className="relative z-10 px-4 sm:px-6 py-12 sm:py-20 bg-black bg-opacity-20 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
               Powerful Features
             </h2>
-            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+            <p className="text-lg sm:text-xl text-gray-300 max-w-2xl mx-auto px-4">
               Everything you need to excel in competitive programming and software development
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 mb-12 sm:mb-16 px-4">
             {features.map((feature, index) => (
               <div
                 key={feature.title}
-                className={`group relative p-8 rounded-2xl bg-gradient-to-br ${feature.color} bg-opacity-10 border border-gray-700 hover:border-gray-500 transition-all duration-500 transform hover:scale-105 hover:-translate-y-2`}
+                className={`group relative p-6 sm:p-8 rounded-2xl bg-gradient-to-br ${feature.color} bg-opacity-10 border border-gray-700 hover:border-gray-500 transition-all duration-500 transform hover:scale-105 hover:-translate-y-2`}
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-white to-transparent opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity duration-500"></div>
-                <feature.icon className="h-12 w-12 mb-6 text-blue-400 group-hover:text-purple-400 transition-colors duration-300" />
-                <h3 className="text-2xl font-bold mb-4 text-white">{feature.title}</h3>
-                <p className="text-gray-300 leading-relaxed">{feature.description}</p>
+                <feature.icon className="h-10 w-10 sm:h-12 sm:w-12 mb-4 sm:mb-6 text-blue-400 group-hover:text-purple-400 transition-colors duration-300" />
+                <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-white">{feature.title}</h3>
+                <p className="text-gray-300 leading-relaxed text-sm sm:text-base">{feature.description}</p>
               </div>
             ))}
           </div>
 
           {/* Interactive Feature Demo */}
-          <div className="bg-gray-800 bg-opacity-50 rounded-2xl p-8 backdrop-blur-sm border border-gray-700">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+          <div className="bg-gray-800 bg-opacity-50 rounded-2xl p-6 sm:p-8 backdrop-blur-sm border border-gray-700 mx-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 items-center">
               <div>
-                <h3 className="text-3xl font-bold mb-4 text-white">AI-Powered Code Review</h3>
-                <p className="text-gray-300 mb-6 leading-relaxed">
+                <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-white">AI-Powered Code Review</h3>
+                <p className="text-gray-300 mb-6 leading-relaxed text-sm sm:text-base">
                   Get instant feedback on your code quality, optimization suggestions, 
                   and complexity analysis powered by advanced AI algorithms.
                 </p>
@@ -234,16 +234,16 @@ const LandingPage: React.FC = () => {
                     "Style and best practices review"
                   ].map((item, index) => (
                     <div key={index} className="flex items-center space-x-3">
-                      <CheckCircle2 className="h-5 w-5 text-green-400" />
-                      <span className="text-gray-300">{item}</span>
+                      <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-400 flex-shrink-0" />
+                      <span className="text-gray-300 text-sm sm:text-base">{item}</span>
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="bg-gray-900 rounded-xl p-6 border border-gray-600">
+              <div className="bg-gray-900 rounded-xl p-4 sm:p-6 border border-gray-600">
                 <div className="flex items-center space-x-2 mb-4">
-                  <Sparkles className="h-5 w-5 text-purple-400" />
-                  <span className="text-purple-400 font-semibold">AI Review Results</span>
+                  <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-purple-400" />
+                  <span className="text-purple-400 font-semibold text-sm sm:text-base">AI Review Results</span>
                 </div>
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
@@ -271,32 +271,32 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Testimonials */}
-      <section className="relative z-10 px-6 py-20">
+      <section className="relative z-10 px-4 sm:px-6 py-12 sm:py-20">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
               Loved by Developers
             </h2>
-            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+            <p className="text-lg sm:text-xl text-gray-300 max-w-2xl mx-auto px-4">
               Join thousands of developers who trust our platform for their coding journey
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 px-4">
             {testimonials.map((testimonial, index) => (
               <div
                 key={testimonial.name}
-                className="bg-gray-800 bg-opacity-50 rounded-2xl p-8 backdrop-blur-sm border border-gray-700 hover:border-gray-500 transition-all duration-300 transform hover:scale-105"
+                className="bg-gray-800 bg-opacity-50 rounded-2xl p-6 sm:p-8 backdrop-blur-sm border border-gray-700 hover:border-gray-500 transition-all duration-300 transform hover:scale-105"
               >
                 <div className="flex items-center mb-4">
                   {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
+                    <Star key={i} className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-400 fill-current" />
                   ))}
                 </div>
-                <p className="text-gray-300 mb-6 leading-relaxed">"{testimonial.content}"</p>
+                <p className="text-gray-300 mb-6 leading-relaxed text-sm sm:text-base">"{testimonial.content}"</p>
                 <div>
-                  <div className="font-semibold text-white">{testimonial.name}</div>
-                  <div className="text-gray-400 text-sm">{testimonial.role}</div>
+                  <div className="font-semibold text-white text-sm sm:text-base">{testimonial.name}</div>
+                  <div className="text-gray-400 text-xs sm:text-sm">{testimonial.role}</div>
                 </div>
               </div>
             ))}
@@ -305,20 +305,20 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="relative z-10 px-6 py-20 bg-gradient-to-r from-blue-600 to-purple-600">
+      <section className="relative z-10 px-4 sm:px-6 py-12 sm:py-20 bg-gradient-to-r from-blue-600 to-purple-600">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 text-white">
             Ready to Start Coding?
           </h2>
-          <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-blue-100 mb-8 max-w-2xl mx-auto px-4">
             Join our community of passionate developers and take your programming skills to the next level.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center px-4">
             {user ? (
               <Link
-                to="/"
-                className="px-8 py-4 bg-white text-blue-600 rounded-full text-lg font-semibold hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 flex items-center space-x-2"
+                to="/dashboard"
+                className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-white text-blue-600 rounded-full text-lg font-semibold hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2"
               >
                 <span>Go to Dashboard</span>
                 <ArrowRight className="h-5 w-5" />
@@ -327,14 +327,14 @@ const LandingPage: React.FC = () => {
               <>
                 <Link
                   to="/signup"
-                  className="px-8 py-4 bg-white text-blue-600 rounded-full text-lg font-semibold hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 flex items-center space-x-2"
+                  className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-white text-blue-600 rounded-full text-lg font-semibold hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2"
                 >
                   <span>Sign Up Free</span>
                   <ArrowRight className="h-5 w-5" />
                 </Link>
                 <Link
                   to="/problems"
-                  className="px-8 py-4 border-2 border-white text-white rounded-full text-lg font-semibold hover:bg-white hover:text-blue-600 transition-all duration-300 flex items-center space-x-2"
+                  className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 border-2 border-white text-white rounded-full text-lg font-semibold hover:bg-white hover:text-blue-600 transition-all duration-300 flex items-center justify-center space-x-2"
                 >
                   <BookOpen className="h-5 w-5" />
                   <span>Browse Problems</span>
@@ -346,15 +346,15 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Footer */}
-      <footer className="relative z-10 px-6 py-12 bg-gray-900 bg-opacity-80 backdrop-blur-sm border-t border-gray-700">
+      <footer className="relative z-10 px-4 sm:px-6 py-8 sm:py-12 bg-gray-900 bg-opacity-80 backdrop-blur-sm border-t border-gray-700">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
+            <div className="sm:col-span-2 md:col-span-1">
               <div className="flex items-center space-x-2 mb-4">
                 <Code2 className="h-6 w-6 text-blue-400" />
                 <span className="text-xl font-bold text-white">VersionSolve</span>
               </div>
-              <p className="text-gray-400 leading-relaxed">
+              <p className="text-gray-400 leading-relaxed text-sm">
                 The ultimate platform for competitive programming and coding practice.
               </p>
             </div>
@@ -362,36 +362,36 @@ const LandingPage: React.FC = () => {
             <div>
               <h3 className="text-white font-semibold mb-4">Platform</h3>
               <div className="space-y-2">
-                <Link to="/problems" className="block text-gray-400 hover:text-white transition-colors">Problems</Link>
-                <Link to="/contests" className="block text-gray-400 hover:text-white transition-colors">Contests</Link>
-                <Link to="/leaderboard" className="block text-gray-400 hover:text-white transition-colors">Leaderboard</Link>
-                <Link to="/compiler" className="block text-gray-400 hover:text-white transition-colors">Online Compiler</Link>
+                <Link to="/problems" className="block text-gray-400 hover:text-white transition-colors text-sm">Problems</Link>
+                <Link to="/contests" className="block text-gray-400 hover:text-white transition-colors text-sm">Contests</Link>
+                <Link to="/leaderboard" className="block text-gray-400 hover:text-white transition-colors text-sm">Leaderboard</Link>
+                <Link to="/compiler" className="block text-gray-400 hover:text-white transition-colors text-sm">Online Compiler</Link>
               </div>
             </div>
             
             <div>
               <h3 className="text-white font-semibold mb-4">Community</h3>
               <div className="space-y-2">
-                <a href="#" className="block text-gray-400 hover:text-white transition-colors">Discord</a>
-                <a href="#" className="block text-gray-400 hover:text-white transition-colors">GitHub</a>
-                <a href="#" className="block text-gray-400 hover:text-white transition-colors">Blog</a>
-                <a href="#" className="block text-gray-400 hover:text-white transition-colors">Forum</a>
+                <a href="#" className="block text-gray-400 hover:text-white transition-colors text-sm">Discord</a>
+                <a href="#" className="block text-gray-400 hover:text-white transition-colors text-sm">GitHub</a>
+                <a href="#" className="block text-gray-400 hover:text-white transition-colors text-sm">Blog</a>
+                <a href="#" className="block text-gray-400 hover:text-white transition-colors text-sm">Forum</a>
               </div>
             </div>
             
             <div>
               <h3 className="text-white font-semibold mb-4">Support</h3>
               <div className="space-y-2">
-                <a href="#" className="block text-gray-400 hover:text-white transition-colors">Documentation</a>
-                <a href="#" className="block text-gray-400 hover:text-white transition-colors">API</a>
-                <a href="#" className="block text-gray-400 hover:text-white transition-colors">Help Center</a>
-                <a href="#" className="block text-gray-400 hover:text-white transition-colors">Contact</a>
+                <a href="#" className="block text-gray-400 hover:text-white transition-colors text-sm">Documentation</a>
+                <a href="#" className="block text-gray-400 hover:text-white transition-colors text-sm">API</a>
+                <a href="#" className="block text-gray-400 hover:text-white transition-colors text-sm">Help Center</a>
+                <a href="#" className="block text-gray-400 hover:text-white transition-colors text-sm">Contact</a>
               </div>
             </div>
           </div>
           
           <div className="border-t border-gray-700 mt-8 pt-8 text-center">
-            <p className="text-gray-400">
+            <p className="text-gray-400 text-sm">
               © 2024 VersionSolve. All rights reserved. Built with ❤️ for developers.
             </p>
           </div>
