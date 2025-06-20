@@ -73,7 +73,8 @@ exports.googleCallback = (req, res, next) => {
     }
     const token = jwt.sign({ id: req.user._id, username: req.user.username }, secretKey, { expiresIn: '1h' });
     // Redirect to frontend dashboard with token as query param
-    res.redirect(`http://localhost:5173/dashboard?token=${token}`);
+    const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+    res.redirect(`${FRONTEND_URL}/dashboard?token=${token}`);
   });
 };
 

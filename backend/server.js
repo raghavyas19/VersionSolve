@@ -14,8 +14,9 @@ const app = express();
 // Load passport configuration
 require('./config/passport');
 
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+app.use(cors({ origin: FRONTEND_URL }));
 app.use(express.json());
-app.use(cors({ origin: 'http://localhost:5173' }));
 app.use(session({ secret: 'your-secret-key', resave: false, saveUninitialized: false }));
 app.use(passport.initialize());
 app.use(passport.session());

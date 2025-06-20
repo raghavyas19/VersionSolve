@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:3000/api',
+  baseURL: import.meta.env.VITE_BACKEND_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -33,7 +33,7 @@ export const verifyToken = async () => {
 };
 
 export const googleLogin = () => {
-  window.location.href = 'http://localhost:3000/api/auth/google'; // Initiate Google OAuth flow
+  window.location.href = import.meta.env.VITE_BACKEND_OAUTH_URL; // Initiate Google OAuth flow
 };
 
 export default api;
