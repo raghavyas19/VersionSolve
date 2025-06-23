@@ -68,12 +68,10 @@ const OnlineCompiler: React.FC = () => {
     setOutput('Running...');
     
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/compiler/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ code, input, language: selectedLanguage }),
       });
