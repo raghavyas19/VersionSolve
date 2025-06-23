@@ -36,7 +36,7 @@ const authenticateJWT = (req, res, next) => {
 };
 
 app.use('/api/auth', authRouter);
-app.use('/api/compiler', authenticateJWT, compilerRouter); // Protect compiler route
+app.use('/api/compiler', compilerRouter); // Compiler route is now public
 app.use('/api/problem', problemRouter);
 
 connectDB();
