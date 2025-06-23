@@ -25,6 +25,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { clsx } from 'clsx';
 import { Link } from 'react-router-dom';
+import.meta.env;
 
 const OnlineCompiler: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
@@ -68,7 +69,7 @@ const OnlineCompiler: React.FC = () => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3000/api/compiler/submit', {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/compiler/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
