@@ -68,7 +68,7 @@ const OnlineCompiler: React.FC = () => {
     setOutput('Running...');
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/compiler/submit`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/compiler/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
