@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Code2, 
-  Trophy, 
-  Users, 
-  Zap, 
-  ArrowRight, 
-  CheckCircle2, 
+import {
+  Code2,
+  Trophy,
+  Users,
+  Zap,
+  ArrowRight,
+  CheckCircle2,
   Star,
   Play,
   BookOpen,
@@ -94,13 +94,16 @@ const LandingPage: React.FC = () => {
       <nav className="relative z-50 px-4 sm:px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Code2 className="h-8 w-8 text-blue-400" />
-            <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              VersionSolve
-            </span>
+            <Link to="/">
+              <img
+                src="/Logo.png"
+                alt="VersionSolve Logo"
+                style={{ width: '8rem' }}
+              />
+            </Link>
           </div>
-          
-          <div className="hidden md:flex items-center space-x-6 lg:space-x-8">
+
+          <div className="hidden md:flex items-center space-x-6 lg:space-x-8 text-lg">
             <Link to="/problems" className="hover:text-blue-400 transition-colors">Problems</Link>
             <Link to="/contests" className="hover:text-blue-400 transition-colors">Contests</Link>
             <Link to="/leaderboard" className="hover:text-blue-400 transition-colors">Leaderboard</Link>
@@ -113,7 +116,7 @@ const LandingPage: React.FC = () => {
                 to="/dashboard"
                 className="px-4 sm:px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full hover:from-blue-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-105 text-sm sm:text-base"
               >
-                Dashboard
+                Go to Dashboard
               </Link>
             ) : (
               <>
@@ -139,36 +142,47 @@ const LandingPage: React.FC = () => {
       <section className="relative z-10 px-4 sm:px-6 py-12 sm:py-20">
         <div className="max-w-7xl mx-auto text-center">
           <div className={`transition-all duration-1000 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-            <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent leading-tight">
+            <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent leading-tight font-space-grotesk">
               Code. Compete. Conquer.
             </h1>
             <p className="text-lg sm:text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed px-4">
-              Master programming with our advanced online judge platform. 
+              Master programming with our advanced online judge platform.
               Solve problems, join contests, and get AI-powered code reviews.
             </p>
-            
+
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12 px-4">
-              <Link
-                to="/problems"
-                className="group w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full text-lg font-semibold hover:from-blue-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2"
-              >
-                <span>Start Solving</span>
-                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-              </Link>
-              
-              <Link
-                to="/compiler"
-                className="group w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 border-2 border-gray-400 rounded-full text-lg font-semibold hover:border-white hover:bg-white hover:text-gray-900 transition-all duration-300 flex items-center justify-center space-x-2"
-              >
-                <Play className="h-5 w-5" />
-                <span>Try Compiler</span>
-              </Link>
+              {user ? (
+                <Link
+                  to="/dashboard"
+                  className="group w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full text-lg font-semibold hover:from-blue-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2"
+                >
+                  <span>Go to Dashboard</span>
+                  <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    to="/problems"
+                    className="group w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full text-lg font-semibold hover:from-blue-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2"
+                  >
+                    <span>Start Solving</span>
+                    <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                  <Link
+                    to="/compiler"
+                    className="group w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 border-2 border-gray-400 rounded-full text-lg font-semibold hover:border-white hover:bg-white hover:text-gray-900 transition-all duration-300 flex items-center justify-center space-x-2"
+                  >
+                    <Play className="h-5 w-5" />
+                    <span>Try Compiler</span>
+                  </Link>
+                </>
+              )}
             </div>
 
             {/* Quick Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 max-w-4xl mx-auto px-4">
               {stats.map((stat, index) => (
-                <div 
+                <div
                   key={stat.label}
                   className={`transition-all duration-1000 delay-${index * 200} transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}
                 >
@@ -195,7 +209,7 @@ const LandingPage: React.FC = () => {
       <section className="relative z-10 px-4 sm:px-6 py-12 sm:py-20 bg-black bg-opacity-20 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12 sm:mb-16">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent font-space-grotesk">
               Powerful Features
             </h2>
             <p className="text-lg sm:text-xl text-gray-300 max-w-2xl mx-auto px-4">
@@ -223,7 +237,7 @@ const LandingPage: React.FC = () => {
               <div>
                 <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-white">AI-Powered Code Review</h3>
                 <p className="text-gray-300 mb-6 leading-relaxed text-sm sm:text-base">
-                  Get instant feedback on your code quality, optimization suggestions, 
+                  Get instant feedback on your code quality, optimization suggestions,
                   and complexity analysis powered by advanced AI algorithms.
                 </p>
                 <div className="space-y-3">
@@ -274,7 +288,7 @@ const LandingPage: React.FC = () => {
       <section className="relative z-10 px-4 sm:px-6 py-12 sm:py-20">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12 sm:mb-16">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent font-space-grotesk">
               Loved by Developers
             </h2>
             <p className="text-lg sm:text-xl text-gray-300 max-w-2xl mx-auto px-4">
@@ -307,13 +321,13 @@ const LandingPage: React.FC = () => {
       {/* CTA Section */}
       <section className="relative z-10 px-4 sm:px-6 py-12 sm:py-20 bg-gradient-to-r from-blue-600 to-purple-600">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 text-white">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 text-white font-space-grotesk">
             Ready to Start Coding?
           </h2>
           <p className="text-lg sm:text-xl text-blue-100 mb-8 max-w-2xl mx-auto px-4">
             Join our community of passionate developers and take your programming skills to the next level.
           </p>
-          
+
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center px-4">
             {user ? (
               <Link
@@ -358,7 +372,7 @@ const LandingPage: React.FC = () => {
                 The ultimate platform for competitive programming and coding practice.
               </p>
             </div>
-            
+
             <div>
               <h3 className="text-white font-semibold mb-4">Platform</h3>
               <div className="space-y-2">
@@ -368,7 +382,7 @@ const LandingPage: React.FC = () => {
                 <Link to="/compiler" className="block text-gray-400 hover:text-white transition-colors text-sm">Online Compiler</Link>
               </div>
             </div>
-            
+
             <div>
               <h3 className="text-white font-semibold mb-4">Community</h3>
               <div className="space-y-2">
@@ -378,7 +392,7 @@ const LandingPage: React.FC = () => {
                 <a href="#" className="block text-gray-400 hover:text-white transition-colors text-sm">Forum</a>
               </div>
             </div>
-            
+
             <div>
               <h3 className="text-white font-semibold mb-4">Support</h3>
               <div className="space-y-2">
@@ -389,7 +403,7 @@ const LandingPage: React.FC = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="border-t border-gray-700 mt-8 pt-8 text-center">
             <p className="text-gray-400 text-sm">
               © 2024 VersionSolve. All rights reserved. Built with ❤️ for developers.

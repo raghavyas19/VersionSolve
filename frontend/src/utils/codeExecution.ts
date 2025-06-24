@@ -145,99 +145,22 @@ export const runTestCases = async (
 };
 
 export const generateAIReview = async (code: string, language: Language): Promise<AIReview> => {
-  // Simulate AI analysis
-  await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 2000));
-  
-  // Mock AI review - in a real system, this would call an AI service
-  const codeLength = code.length;
-  const hasComments = code.includes('//') || code.includes('#') || code.includes('/*');
-  const hasGoodNaming = !/[a-z][0-9]/.test(code) && !code.includes('temp') && !code.includes('var1');
-  const hasNestedLoops = (code.match(/for|while/g) || []).length >= 2;
-  const hasRecursion = code.includes('return') && code.includes('(') && code.includes(')');
-  
-  const codeQuality = Math.min(10, Math.max(1, 
-    5 + 
-    (hasComments ? 1 : 0) + 
-    (hasGoodNaming ? 2 : 0) + 
-    (codeLength > 50 ? 1 : 0) +
-    (codeLength < 500 ? 1 : 0)
-  ));
-  
-  const readabilityScore = Math.min(10, Math.max(1,
-    6 + 
-    (hasComments ? 2 : 0) + 
-    (hasGoodNaming ? 2 : 0)
-  ));
-
-  const optimizationSuggestions = [];
-  const bestPractices = [];
-  const styleIssues = [];
-  const securityIssues = [];
-
-  if (!hasComments) {
-    styleIssues.push('Consider adding comments to explain complex logic');
-  }
-  
-  if (!hasGoodNaming) {
-    styleIssues.push('Use more descriptive variable names');
-  }
-  
-  if (hasNestedLoops) {
-    optimizationSuggestions.push('Consider optimizing nested loops for better time complexity');
-  }
-  
-  if (code.includes('eval') || code.includes('exec')) {
-    securityIssues.push('Avoid using eval() or exec() functions for security reasons');
-  }
-  
-  if (hasComments) {
-    bestPractices.push('Good use of comments for code documentation');
-  }
-  
-  if (hasGoodNaming) {
-    bestPractices.push('Excellent variable naming conventions');
-  }
-  
-  if (codeLength < 200) {
-    bestPractices.push('Concise and clean implementation');
-  }
-
-  // Add some default suggestions if none were added
-  if (optimizationSuggestions.length === 0) {
-    optimizationSuggestions.push('Code appears to be well-optimized');
-    optimizationSuggestions.push('Consider edge cases and input validation');
-  }
-  
-  if (bestPractices.length === 0) {
-    bestPractices.push('Code follows basic programming principles');
-  }
-
-  let timeComplexity = 'O(n)';
-  let spaceComplexity = 'O(1)';
-  
-  if (hasNestedLoops) {
-    timeComplexity = 'O(n²)';
-  } else if (hasRecursion) {
-    timeComplexity = 'O(2^n)';
-    spaceComplexity = 'O(n)';
-  }
-  
-  if (code.includes('map') || code.includes('dict') || code.includes('{}') || hasRecursion) {
-    spaceComplexity = 'O(n)';
-  }
-
+  const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/ai/review`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code }),
+  });
+  if (!response.ok) throw new Error('AI review failed');
+  const data = await response.json();
+  // TODO: Parse/structure data.review as needed for your UI
   return {
-    codeQuality,
-    readabilityScore,
-    optimizationSuggestions,
-    complexityAnalysis: {
-      time: timeComplexity,
-      space: spaceComplexity
-    },
-    styleIssues,
-    plagiarismScore: Math.floor(Math.random() * 20) + 5, // Low plagiarism score
-    bestPractices,
-    securityIssues
+    codeQuality: 7, // Placeholder, parse from data.review if structured
+    readabilityScore: 8,
+    complexityAnalysis: { time: "O(n)", space: "O(1)" },
+    optimizationSuggestions: [],
+    bestPractices: [],
+    styleIssues: [],
+    ...data.review // If your backend returns a structured object
   };
 };
 

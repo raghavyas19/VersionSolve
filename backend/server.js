@@ -8,6 +8,7 @@ const session = require('express-session');
 const connectDB = require('./config/db');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
+const aiRouter = require('./routes/ai');
 
 const app = express();
 
@@ -38,6 +39,7 @@ const authenticateJWT = (req, res, next) => {
 app.use('/api/auth', authRouter);
 app.use('/api/compiler', compilerRouter); // Compiler route is now public
 app.use('/api/problem', problemRouter);
+app.use('/api/ai', aiRouter);
 
 connectDB();
 

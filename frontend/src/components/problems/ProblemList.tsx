@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, Filter, CheckCircle2, Clock, Users, Lock } from 'lucide-react';
-import { mockProblems } from '../../data/mockData';
+// import { mockProblems } from '../../data/mockData';
 import { DIFFICULTY_COLORS } from '../../utils/constants';
 import { useAuth } from '../../contexts/AuthContext';
 import { clsx } from 'clsx';
+import { fetchProblems } from '../../utils/api';
 
 const ProblemList: React.FC = () => {
   const { user, setRedirectPath } = useAuth();
@@ -12,17 +13,37 @@ const ProblemList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState<string>('all');
   const [tagFilter, setTagFilter] = useState<string>('all');
+  const [problems, setProblems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredProblems = mockProblems.filter(problem => {
+  useEffect(() => {
+    const loadProblems = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await fetchProblems();
+        // Map _id to id for frontend compatibility
+        const mapped = data.map((p: any) => ({ ...p, id: p._id || p.id }));
+        setProblems(mapped);
+      } catch (err: any) {
+        setError('Failed to load problems');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadProblems();
+  }, []);
+
+  const filteredProblems = problems.filter(problem => {
     const matchesSearch = problem.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         problem.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+                         (problem.tags || []).some((tag: string) => tag.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesDifficulty = difficultyFilter === 'all' || problem.difficulty === difficultyFilter;
-    const matchesTag = tagFilter === 'all' || problem.tags.includes(tagFilter);
-    
+    const matchesTag = tagFilter === 'all' || (problem.tags || []).includes(tagFilter);
     return matchesSearch && matchesDifficulty && matchesTag;
   });
 
-  const allTags = Array.from(new Set(mockProblems.flatMap(p => p.tags)));
+  const allTags = Array.from(new Set(problems.flatMap((p: any) => p.tags || [])));
 
   const handleProblemClick = (problemId: string, e: React.MouseEvent) => {
     // Allow normal navigation for authenticated users
@@ -45,9 +66,20 @@ const ProblemList: React.FC = () => {
     navigate(`/${action}`, { state: { from: `/problems/${problemId}` } });
   };
 
+  const handleSolveProblem = (problemId: string) => {
+    navigate(`/problems/solve/${problemId}`);
+  };
+
+  if (loading) {
+    return <div className="text-center py-12">Loading problems...</div>;
+  }
+  if (error) {
+    return <div className="text-center py-12 text-red-500">{error}</div>;
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row gap-4">
+    <div className="space-y-6 overflow-x-hidden font-sans">
+      <div className="flex flex-col sm:flex-row gap-4 py-1">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
@@ -96,7 +128,71 @@ const ProblemList: React.FC = () => {
         </div>
       )}
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+      {/* Card layout for mobile */}
+      <div className="md:hidden space-y-3">
+        {filteredProblems.map((problem) => (
+          <div key={problem.id} className="w-full rounded-lg shadow border p-3 bg-[var(--color-surface)] flex flex-col gap-1 text-sm break-words">
+            <div className="flex items-center justify-between w-full">
+              <Link to={`/problems/${problem.id}`} className="font-bold text-blue-600 dark:text-blue-400 hover:underline text-base truncate w-3/4 break-words">
+                {problem.title}
+              </Link>
+              <span className={clsx(
+                'inline-flex px-2 py-1 text-xs font-medium rounded-full',
+                DIFFICULTY_COLORS[problem.difficulty as keyof typeof DIFFICULTY_COLORS]
+              )}>
+                {problem.difficulty}
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-1 text-xs text-gray-500 dark:text-gray-400 w-full break-words">
+              {problem.tags.map((tag: string) => (
+                <span key={tag} className="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded break-words">
+                  {tag}
+                </span>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-xs w-full break-words">
+              <span>{problem.submissions} submissions</span>
+              <span>{problem.acceptanceRate.toFixed(1)}% accepted</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-xs w-full break-words">
+              <span>Time: {problem.timeLimit}s</span>
+              <span>Memory: {problem.memoryLimit}MB</span>
+            </div>
+            {!user && (
+              <div className="flex gap-1 mt-1 w-full">
+                <button
+                  className="solve-button flex-1 px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleLoginToSolve(problem.id, 'login');
+                  }}
+                >
+                  Sign In
+                </button>
+                <button
+                  className="solve-button flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-xs"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleLoginToSolve(problem.id, 'signup');
+                  }}
+                >
+                  Sign Up
+                </button>
+              </div>
+            )}
+            {user && (
+              <button
+                className="solve-button flex-1 px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs"
+                onClick={() => handleSolveProblem(problem.id)}
+              >
+                Solve Problem
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+      {/* Table layout for desktop */}
+      <div className="hidden md:block bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-700">
@@ -124,7 +220,7 @@ const ProblemList: React.FC = () => {
               {filteredProblems.map((problem) => (
                 <tr 
                   key={problem.id} 
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  className="transition-colors"
                   onClick={(e) => handleProblemClick(problem.id, e)}
                 >
                   <td className="px-4 sm:px-6 py-4">
@@ -153,7 +249,7 @@ const ProblemList: React.FC = () => {
                   <td className="px-4 sm:px-6 py-4">
                     <span className={clsx(
                       'inline-flex px-2 py-1 text-xs font-medium rounded-full',
-                      DIFFICULTY_COLORS[problem.difficulty]
+                      DIFFICULTY_COLORS[problem.difficulty as keyof typeof DIFFICULTY_COLORS]
                     )}>
                       {problem.difficulty}
                     </span>
@@ -163,7 +259,7 @@ const ProblemList: React.FC = () => {
                   </td>
                   <td className="hidden md:table-cell px-4 sm:px-6 py-4">
                     <div className="flex flex-wrap gap-1">
-                      {problem.tags.slice(0, 2).map((tag) => (
+                      {problem.tags.slice(0, 2).map((tag: string) => (
                         <span
                           key={tag}
                           className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded"
@@ -204,6 +300,16 @@ const ProblemList: React.FC = () => {
                           <span className="sm:hidden">+</span>
                         </button>
                       </div>
+                    </td>
+                  )}
+                  {user && (
+                    <td className="px-4 sm:px-6 py-4">
+                      <button
+                        className="solve-button flex-1 px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs"
+                        onClick={() => handleSolveProblem(problem.id)}
+                      >
+                        Solve Problem
+                      </button>
                     </td>
                   )}
                 </tr>

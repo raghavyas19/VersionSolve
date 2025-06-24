@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Plus, 
   Edit, 
@@ -14,16 +14,20 @@ import {
   MemoryStick
 } from 'lucide-react';
 import { Problem, TestCase } from '../../types';
-import { mockProblems } from '../../data/mockData';
+// import { mockProblems } from '../../data/mockData';
 import { DIFFICULTY_COLORS } from '../../utils/constants';
 import { clsx } from 'clsx';
+import { fetchProblems, createProblem } from '../../utils/api';
 
 const ProblemManager: React.FC = () => {
-  const [problems, setProblems] = useState<Problem[]>(mockProblems);
+  const [problems, setProblems] = useState<Problem[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingProblem, setEditingProblem] = useState<Problem | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState<string>('all');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -37,6 +41,60 @@ const ProblemManager: React.FC = () => {
     examples: [{ input: '', output: '', explanation: '' }],
     testCases: [{ input: '', expectedOutput: '', isHidden: false, points: 10 }]
   });
+
+  useEffect(() => {
+    const loadProblems = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await fetchProblems();
+        setProblems(data);
+      } catch (err: any) {
+        setError('Failed to load problems');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadProblems();
+  }, []);
+
+  const handleSaveProblem = async () => {
+    setSaving(true);
+    try {
+      const newProblem: any = {
+        title: formData.title,
+        description: formData.description,
+        difficulty: formData.difficulty,
+        tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+        timeLimit: formData.timeLimit,
+        memoryLimit: formData.memoryLimit,
+        points: formData.points,
+        isPublic: formData.isPublic,
+        examples: formData.examples.filter(ex => ex.input || ex.output),
+        testCases: formData.testCases.map((tc, index) => ({
+          id: `tc-${index}`,
+          input: tc.input,
+          expectedOutput: tc.expectedOutput,
+          isHidden: tc.isHidden,
+          points: tc.points
+        })),
+        submissions: editingProblem?.submissions || 0,
+        acceptanceRate: editingProblem?.acceptanceRate || 0,
+        author: 'admin',
+        // createdAt will be set by backend
+      };
+      const { problem } = await createProblem(newProblem);
+      setProblems(editingProblem
+        ? problems.map(p => p.id === editingProblem.id ? problem : p)
+        : [...problems, problem]
+      );
+      setShowCreateModal(false);
+    } catch (err) {
+      setError('Failed to save problem');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const filteredProblems = problems.filter(problem => {
     const matchesSearch = problem.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -84,40 +142,6 @@ const ProblemManager: React.FC = () => {
     setShowCreateModal(true);
   };
 
-  const handleSaveProblem = () => {
-    const newProblem: Problem = {
-      id: editingProblem?.id || Date.now().toString(),
-      title: formData.title,
-      description: formData.description,
-      difficulty: formData.difficulty,
-      tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
-      timeLimit: formData.timeLimit,
-      memoryLimit: formData.memoryLimit,
-      points: formData.points,
-      isPublic: formData.isPublic,
-      examples: formData.examples.filter(ex => ex.input || ex.output),
-      testCases: formData.testCases.map((tc, index) => ({
-        id: `tc-${index}`,
-        input: tc.input,
-        expectedOutput: tc.expectedOutput,
-        isHidden: tc.isHidden,
-        points: tc.points
-      })),
-      submissions: editingProblem?.submissions || 0,
-      acceptanceRate: editingProblem?.acceptanceRate || 0,
-      author: 'admin',
-      createdAt: editingProblem?.createdAt || new Date()
-    };
-
-    if (editingProblem) {
-      setProblems(problems.map(p => p.id === editingProblem.id ? newProblem : p));
-    } else {
-      setProblems([...problems, newProblem]);
-    }
-
-    setShowCreateModal(false);
-  };
-
   const handleDeleteProblem = (problemId: string) => {
     if (confirm('Are you sure you want to delete this problem?')) {
       setProblems(problems.filter(p => p.id !== problemId));
@@ -152,8 +176,15 @@ const ProblemManager: React.FC = () => {
     });
   };
 
+  if (loading) {
+    return <div className="text-center py-12">Loading problems...</div>;
+  }
+  if (error) {
+    return <div className="text-center py-12 text-red-500">{error}</div>;
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-x-hidden">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -197,8 +228,62 @@ const ProblemManager: React.FC = () => {
         </select>
       </div>
 
-      {/* Problems Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+      {/* Card layout for mobile */}
+      <div className="md:hidden space-y-3">
+        {filteredProblems.map((problem) => (
+          <div key={problem.id} className="w-full rounded-lg shadow border p-3 bg-[var(--color-surface)] flex flex-col gap-1 text-sm break-words">
+            <div className="flex items-center justify-between w-full">
+              <div className="font-bold text-blue-600 dark:text-blue-400 text-base truncate w-3/4 break-words">{problem.title}</div>
+              <span className={clsx(
+                'inline-flex px-2 py-1 text-xs font-medium rounded-full',
+                DIFFICULTY_COLORS[problem.difficulty]
+              )}>
+                {problem.difficulty}
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-1 text-xs text-gray-500 dark:text-gray-400 w-full break-words">
+              {problem.tags.map((tag) => (
+                <span key={tag} className="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded break-words">
+                  {tag}
+                </span>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-xs w-full break-words">
+              <span>{problem.submissions} submissions</span>
+              <span>{problem.acceptanceRate.toFixed(1)}% accepted</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-xs w-full break-words">
+              <span>Time: {problem.timeLimit}s</span>
+              <span>Memory: {problem.memoryLimit}MB</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-xs w-full break-words">
+              <span>Status: {problem.isPublic ? 'Public' : 'Draft'}</span>
+              <span>Points: {problem.points}</span>
+            </div>
+            <div className="flex gap-1 mt-1 w-full">
+              <button
+                onClick={() => handleEditProblem(problem)}
+                className="flex-1 p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 border border-blue-200 dark:border-blue-700 rounded transition-colors text-xs"
+              >
+                Edit
+              </button>
+              <button
+                className="flex-1 p-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 border border-gray-200 dark:border-gray-700 rounded transition-colors text-xs"
+              >
+                View
+              </button>
+              <button
+                onClick={() => handleDeleteProblem(problem.id)}
+                className="flex-1 p-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 border border-red-200 dark:border-red-700 rounded transition-colors text-xs"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* Table layout for desktop */}
+      <div className="hidden md:block bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-700">

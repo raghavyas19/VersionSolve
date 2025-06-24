@@ -16,6 +16,7 @@ import LeaderboardPage from './pages/LeaderboardPage';
 import AdminDashboard from './components/admin/AdminDashboard';
 import ProblemManager from './components/admin/ProblemManager';
 import LoadingSpinner from './components/common/LoadingSpinner';
+import ProblemCodeEditor from './components/editor/ProblemCodeEditor';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useAuth();
@@ -29,28 +30,6 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   }
   
   return user ? <>{children}</> : <Navigate to="/login" replace />;
-};
-
-const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, isLoading } = useAuth();
-  
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
-  }
-  
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-  
-  if (user.role !== 'admin') {
-    return <Navigate to="/dashboard" replace />;
-  }
-  
-  return <>{children}</>;
 };
 
 const AuthHandler: React.FC = () => {
@@ -106,8 +85,8 @@ const AppRoutes: React.FC = () => {
       <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <LoginForm />} />
       <Route path="/signup" element={user ? <Navigate to="/dashboard" replace /> : <SignupForm />} />
       <Route path="/compiler" element={<OnlineCompiler />} />
-      {/* Landing page for non-authenticated users */}
-      <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
+      {/* Landing page always accessible */}
+      <Route path="/" element={<LandingPage />} />
       {/* Main app routes with Layout */}
       <Route path="/" element={<Layout />}> 
         {/* Dashboard only for authenticated users, with AuthHandler for Google OAuth */}
@@ -115,6 +94,15 @@ const AppRoutes: React.FC = () => {
           window.location.search.includes('token=') ? <AuthHandler /> :
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        } />
+        {/* Dashboard subroutes */}
+        <Route path="dashboard/problems" element={<ProblemsPage />} />
+        <Route path="dashboard/leaderboard" element={<LeaderboardPage />} />
+        <Route path="dashboard/contests" element={<ContestsPage />} />
+        <Route path="dashboard/mysubmissions" element={
+          <ProtectedRoute>
+            <SubmissionsPage />
           </ProtectedRoute>
         } />
         {/* Public pages accessible to guests */}
@@ -130,15 +118,12 @@ const AppRoutes: React.FC = () => {
         } />
         {/* Admin routes */}
         <Route path="admin" element={
-          <AdminRoute>
-            <AdminDashboard />
-          </AdminRoute>
+          <AdminDashboard />
         } />
         <Route path="admin/problems" element={
-          <AdminRoute>
-            <ProblemManager />
-          </AdminRoute>
+          <ProblemManager />
         } />
+        <Route path="problems/solve/:problemId" element={<ProblemCodeEditor />} />
       </Route>
       {/* Redirect unknown routes */}
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Clock, MemoryStick, Users, CheckCircle2, Play, Lock } from 'lucide-react';
-import { mockProblems } from '../../data/mockData';
+// import { mockProblems } from '../../data/mockData';
 import { DIFFICULTY_COLORS } from '../../utils/constants';
 import { useAuth } from '../../contexts/AuthContext';
 import CodeEditor from '../editor/CodeEditor';
 import { clsx } from 'clsx';
+import { fetchProblemById } from '../../utils/api';
 
 const ProblemDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -14,10 +15,32 @@ const ProblemDetail: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'description' | 'submissions' | 'discussion'>('description');
   const [showEditor, setShowEditor] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
-  
-  const problem = mockProblems.find(p => p.id === id);
+  const [problem, setProblem] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!problem) {
+  useEffect(() => {
+    const loadProblem = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        if (id) {
+          const data = await fetchProblemById(id);
+          setProblem(data);
+        }
+      } catch (err: any) {
+        setError('Problem not found');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadProblem();
+  }, [id]);
+
+  if (loading) {
+    return <div className="text-center py-12">Loading problem...</div>;
+  }
+  if (error || !problem) {
     return (
       <div className="text-center py-12">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Problem not found</h2>
@@ -28,13 +51,9 @@ const ProblemDetail: React.FC = () => {
     );
   }
 
-  if (showEditor) {
-    return <CodeEditor problem={problem} onBack={() => setShowEditor(false)} />;
-  }
-
   const handleSolveProblem = () => {
     if (user) {
-      setShowEditor(true);
+      navigate(`/problems/solve/${id}`);
     } else {
       setShowLoginPrompt(true);
     }
@@ -62,11 +81,11 @@ const ProblemDetail: React.FC = () => {
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div className="min-w-0 flex-1">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate">{problem.title}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate font-space-grotesk">{problem.title}</h1>
             <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2">
               <span className={clsx(
                 'inline-flex px-2 py-1 text-xs font-medium rounded-full',
-                DIFFICULTY_COLORS[problem.difficulty]
+                DIFFICULTY_COLORS[problem.difficulty as keyof typeof DIFFICULTY_COLORS]
               )}>
                 {problem.difficulty}
               </span>
@@ -170,8 +189,8 @@ const ProblemDetail: React.FC = () => {
                   
                   {problem.examples.length > 0 && (
                     <div className="mt-8">
-                      <h3 className="text-lg font-semibold mb-4">Examples</h3>
-                      {problem.examples.map((example, index) => (
+                      <h3 className="text-lg font-semibold mb-4 font-space-grotesk">Examples</h3>
+                      {problem.examples.map((example: any, index: number) => (
                         <div key={index} className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                           <div className="mb-2">
                             <strong>Input:</strong>
@@ -283,7 +302,7 @@ const ProblemDetail: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
             <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Tags</h3>
             <div className="flex flex-wrap gap-2">
-              {problem.tags.map((tag) => (
+              {problem.tags.map((tag: string) => (
                 <span
                   key={tag}
                   className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded"
