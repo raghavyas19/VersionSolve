@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '../types';
 import api from '../utils/api';
+import { clearUserData, handleReload, initializeMemoryManagement } from '../utils/memoryManager';
 
 interface AuthContextType {
   user: User | null;
@@ -33,11 +34,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const verifyToken = async () => {
         try {
           const response = await api.get('/auth/verify');
-          setUser(response.data.user || null); // Ensure user is set even if response.data.user is undefined
+          const userData = response.data.user || null;
+          setUser(userData);
+          
+          // Handle reload for authenticated user
+          if (userData) {
+            await handleReload(userData.id || userData._id);
+            // Initialize memory management for authenticated user
+            initializeMemoryManagement(userData.id || userData._id);
+          }
         } catch (err) {
           console.error('Token verification error:', err);
           localStorage.removeItem('token');
           setUser(null);
+          // Clear any potential user data on token verification failure
+          clearUserData();
         } finally {
           setIsLoading(false);
         }
@@ -45,6 +56,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       verifyToken();
     } else {
       setIsLoading(false);
+      // Handle reload for guest user
+      handleReload();
+      // Initialize memory management for guest user
+      initializeMemoryManagement();
     }
   }, []);
 
@@ -54,7 +69,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { token } = response.data;
       localStorage.setItem('token', token);
       const verifyResponse = await api.get('/auth/verify');
-      setUser(verifyResponse.data.user || null);
+      const userData = verifyResponse.data.user || null;
+      setUser(userData);
+      
+      // Handle reload for newly logged in user
+      if (userData) {
+        await handleReload(userData.id || userData._id);
+        // Initialize memory management for newly logged in user
+        initializeMemoryManagement(userData.id || userData._id);
+      }
+      
       return true;
     } catch (err) {
       console.error('Login error:', err);
@@ -63,9 +87,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
+    const userId = user?.id || user?._id;
+    
+    // Clear all user-specific data before logging out
+    clearUserData(userId);
+    
     setUser(null);
     localStorage.removeItem('token');
     setRedirectPath(null);
+    
+    console.log('User logged out and all data cleared');
   };
 
   return (

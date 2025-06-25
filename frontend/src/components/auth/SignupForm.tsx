@@ -4,6 +4,7 @@ import { Code2, Mail, Lock, Eye, EyeOff, User, Phone } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { register, googleLogin } from '../../utils/api';
+import { clearUserData } from '../../utils/memoryManager';
 
 const SignupForm: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -69,6 +70,7 @@ const SignupForm: React.FC = () => {
       localStorage.setItem('token', token);
       // Set user manually since signup is complete
       setUser({ id: 'temp', username: formData.username, email: formData.emailOrPhone, role: 'user', rating: 0, solvedProblems: 0, submissions: 0, joinedAt: new Date() });
+      clearUserData();
       const destination = redirectPath || '/dashboard';
       setRedirectPath(null);
       navigate(destination, { replace: true });

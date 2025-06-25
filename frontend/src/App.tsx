@@ -17,6 +17,7 @@ import AdminDashboard from './components/admin/AdminDashboard';
 import ProblemManager from './components/admin/ProblemManager';
 import LoadingSpinner from './components/common/LoadingSpinner';
 import ProblemCodeEditor from './components/editor/ProblemCodeEditor';
+import { clearUserData, handleReload, initializeMemoryManagement } from './utils/memoryManager';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useAuth();
@@ -41,13 +42,25 @@ const AuthHandler: React.FC = () => {
     const params = new URLSearchParams(location.search);
     const token = params.get('token');
     if (token) {
+      // Clear any existing user data before setting new token
+      clearUserData();
+      
       localStorage.setItem('token', token);
       params.delete('token');
       // Verify token and update user
       import('./utils/api').then(({ default: api }) => {
         api.get('/auth/verify')
           .then(res => {
-            setUser(res.data.user || null);
+            const userData = res.data.user || null;
+            setUser(userData);
+            
+            // Handle reload for newly authenticated user
+            if (userData) {
+              handleReload(userData.id || userData._id);
+              // Initialize memory management for newly authenticated user
+              initializeMemoryManagement(userData.id || userData._id);
+            }
+            
             navigate('/dashboard', { replace: true });
           })
           .catch(() => {

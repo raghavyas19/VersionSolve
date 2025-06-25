@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Filter, CheckCircle2, Clock, Users, Lock } from 'lucide-react';
+import { Search, Clock, Users, Lock } from 'lucide-react';
 // import { mockProblems } from '../../data/mockData';
 import { DIFFICULTY_COLORS } from '../../utils/constants';
 import { useAuth } from '../../contexts/AuthContext';
@@ -79,7 +79,7 @@ const ProblemList: React.FC = () => {
 
   return (
     <div className="space-y-6 overflow-x-hidden font-sans">
-      <div className="flex flex-col sm:flex-row gap-4 py-1">
+      <div className="flex flex-col sm:flex-row gap-4 py-1 mx-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
@@ -87,14 +87,14 @@ const ProblemList: React.FC = () => {
             placeholder="Search problems or tags..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="pl-10 pr-4 py-1 w-full border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
         
         <select
           value={difficultyFilter}
           onChange={(e) => setDifficultyFilter(e.target.value)}
-          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         >
           <option value="all">All Difficulties</option>
           <option value="Easy">Easy</option>
@@ -105,7 +105,7 @@ const ProblemList: React.FC = () => {
         <select
           value={tagFilter}
           onChange={(e) => setTagFilter(e.target.value)}
-          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         >
           <option value="all">All Tags</option>
           {allTags.map(tag => (
@@ -197,23 +197,21 @@ const ProblemList: React.FC = () => {
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Problem
                 </th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Difficulty
                 </th>
-                <th className="hidden sm:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="hidden sm:table-cell px-4 sm:px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Acceptance
                 </th>
-                <th className="hidden md:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="hidden md:table-cell px-4 sm:px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Tags
                 </th>
-                {!user && (
-                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Action
-                  </th>
-                )}
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Action
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -225,7 +223,7 @@ const ProblemList: React.FC = () => {
                 >
                   <td className="px-4 sm:px-6 py-4">
                     <div className="flex items-center space-x-3">
-                      {user && <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />}
+                      
                       <div className="min-w-0 flex-1">
                         <Link
                           to={`/problems/${problem.id}`}
@@ -274,8 +272,8 @@ const ProblemList: React.FC = () => {
                       )}
                     </div>
                   </td>
-                  {!user && (
-                    <td className="px-4 sm:px-6 py-4">
+                  <td className="px-4 sm:px-6 py-4">
+                    {!user ? (
                       <div className="flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-2">
                         <button
                           className="solve-button flex items-center justify-center space-x-1 px-2 sm:px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
@@ -300,18 +298,20 @@ const ProblemList: React.FC = () => {
                           <span className="sm:hidden">+</span>
                         </button>
                       </div>
-                    </td>
-                  )}
-                  {user && (
-                    <td className="px-4 sm:px-6 py-4">
+                    ) : (
                       <button
-                        className="solve-button flex-1 px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs"
-                        onClick={() => handleSolveProblem(problem.id)}
+                        className="solve-button flex items-center justify-center space-x-1 px-2 sm:px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleSolveProblem(problem.id);
+                        }}
                       >
-                        Solve Problem
+                        <span className="hidden sm:inline">Solve Problem</span>
+                        <span className="sm:hidden">→</span>
                       </button>
-                    </td>
-                  )}
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

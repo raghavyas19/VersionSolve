@@ -124,24 +124,25 @@ export const executeCodeWithInput = async (
 export const runTestCases = async (
   code: string,
   language: Language,
-  testCases: TestCase[]
-): Promise<ExecutionResult[]> => {
-  const results: ExecutionResult[] = [];
-  
-  for (const testCase of testCases) {
-    const result = await executeCode(code, language, testCase.input);
-    
-    results.push({
-      testCase,
-      output: result.output || '',
-      success: result.success && result.output?.trim() === testCase.expectedOutput.trim(),
-      executionTime: result.executionTime,
-      memoryUsage: result.memoryUsage,
-      error: result.error
-    });
-  }
-  
-  return results;
+  problemId: string
+): Promise<{ results: ExecutionResult[]; passedTests: number; totalTests: number }> => {
+  const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/problem/execute`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code, language, problemId }),
+  });
+  if (!response.ok) throw new Error('Code execution failed');
+  return response.json();
+};
+
+export const submitSolution = async (submissionData: any) => {
+  const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/submission`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(submissionData),
+  });
+  if (!response.ok) throw new Error('Submission failed');
+  return response.json();
 };
 
 export const generateAIReview = async (code: string, language: Language): Promise<AIReview> => {
@@ -165,7 +166,7 @@ export const generateAIReview = async (code: string, language: Language): Promis
 };
 
 export const analyzeComplexity = (code: string): { time: string; space: string } => {
-  // Simple heuristic analysis - in a real system, this would be more sophisticated
+  // Simple heuristic analysis - in a real system, this would be more sophisticateddocker
   const hasNestedLoops = (code.match(/for|while/g) || []).length >= 2;
   const hasRecursion = code.includes('return') && (code.includes('(') && code.includes(')'));
   const hasHashMap = code.includes('map') || code.includes('dict') || code.includes('{}');
@@ -187,4 +188,18 @@ export const analyzeComplexity = (code: string): { time: string; space: string }
     time: timeComplexity,
     space: spaceComplexity
   };
+};
+
+export const executeCustomCode = async (
+  code: string,
+  language: Language,
+  input: string
+): Promise<{ results: ExecutionResult[]; passedTests: number; totalTests: number }> => {
+  const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/problem/execute-custom`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code, language, input }),
+  });
+  if (!response.ok) throw new Error('Code execution failed');
+  return response.json();
 };

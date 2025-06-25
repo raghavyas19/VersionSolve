@@ -3,7 +3,7 @@ import { Editor } from '@monaco-editor/react';
 import { Play, Save, Terminal, CheckCircle2, XCircle, Clock, MemoryStick, User as UserIcon, Sun, Moon } from 'lucide-react';
 import { Problem, Language, ExecutionResult } from '../../types';
 import { LANGUAGES, DIFFICULTY_COLORS } from '../../utils/constants';
-import { compileCode, runTestCases } from '../../utils/codeExecution';
+import { compileCode, runTestCases, submitSolution, executeCustomCode } from '../../utils/codeExecution';
 import { useTheme } from '../../contexts/ThemeContext';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { clsx } from 'clsx';
@@ -52,13 +52,22 @@ const ProblemCodeEditor: React.FC = () => {
   const [problem, setProblem] = useState<Problem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedLanguage, setSelectedLanguage] = useState<Language>('python');
+
+  // Language preference storage key
+  const getLanguagePreferenceKey = () => {
+    return `language_preference_${user?.id || 'guest'}_${problemId}`;
+  };
+
+  const [selectedLanguage, setSelectedLanguage] = useState<Language | null>(null);
+  const [languageLoading, setLanguageLoading] = useState(true);
   const [code, setCode] = useState('');
   const [isRunning, setIsRunning] = useState(false);
   const [testResults, setTestResults] = useState<ExecutionResult[]>([]);
   const [customInput, setCustomInput] = useState('');
   const [customOutput, setCustomOutput] = useState('');
   const [activeTab, setActiveTab] = useState<'testcases' | 'result' | 'custom'>('testcases');
+  const [passedTests, setPassedTests] = useState(0);
+  const [totalTests, setTotalTests] = useState(0);
   const editorRef = useRef<any>(null);
   const { setHidden } = useSidebarVisibility();
   const { setEditorOpen } = useEditorVisibility();
@@ -66,6 +75,9 @@ const ProblemCodeEditor: React.FC = () => {
   const [splitSize, setSplitSize] = useState(480);
   const [terminalHeight, setTerminalHeight] = useState(220);
   const [bottomCollapsed, setBottomCollapsed] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionVerdict, setSubmissionVerdict] = useState<string | null>(null);
+  const [terminalError, setTerminalError] = useState<string | null>(null);
 
   useEffect(() => {
     setHidden(true);
@@ -77,11 +89,12 @@ const ProblemCodeEditor: React.FC = () => {
   }, [setHidden, setEditorOpen]);
 
   useEffect(() => {
+    if (!selectedLanguage) return;
     const fetchProblem = async () => {
       setLoading(true);
       setError(null);
       try {
-        if (problemId) {
+        if (problemId && selectedLanguage) {
           const data = await fetchProblemById(problemId);
           setProblem(data);
           setCode(LANGUAGES[selectedLanguage].template);
@@ -103,10 +116,11 @@ const ProblemCodeEditor: React.FC = () => {
 
   // Load code from localStorage on mount/user/problem/language change
   useEffect(() => {
+    if (!selectedLanguage) return;
     const saved = localStorage.getItem(getStorageKey());
     if (saved) {
       setCode(saved);
-    } else if (problem) {
+    } else if (problem && selectedLanguage) {
       setCode(LANGUAGES[selectedLanguage].template);
     }
     // eslint-disable-next-line
@@ -120,27 +134,119 @@ const ProblemCodeEditor: React.FC = () => {
     // eslint-disable-next-line
   }, [code, user?.id, problemId, selectedLanguage, problem]);
 
+  // Update passedTests and totalTests when testResults change
+  useEffect(() => {
+    const passed = testResults.filter(r => r.success).length;
+    const total = testResults.length;
+    setPassedTests(passed);
+    setTotalTests(total);
+  }, [testResults]);
+
+  // Set selectedLanguage from localStorage after user and problemId are available
+  useEffect(() => {
+    if (user && user.id && problemId) {
+      const saved = localStorage.getItem(`language_preference_${user.id}_${problemId}`);
+      if (saved && ['python', 'cpp', 'c', 'java'].includes(saved)) {
+        setSelectedLanguage(saved as Language);
+      } else {
+        setSelectedLanguage('python');
+      }
+      setLanguageLoading(false);
+    }
+  }, [user, problemId]);
+
   const handleLanguageChange = (language: Language) => {
+    if (!language) return;
     setSelectedLanguage(language);
     setCode(LANGUAGES[language].template);
+    // Save language preference
+    if (user && user.id && problemId) {
+      localStorage.setItem(`language_preference_${user.id}_${problemId}`, language);
+    }
   };
 
   const handleRunCode = async () => {
     if (!code.trim() || !problem) return;
     setIsRunning(true);
-    setActiveTab('result');
+    setActiveTab('testcases');
+    setTerminalError(null); // Clear previous error
     try {
-      const compileResult = await compileCode(code, selectedLanguage);
-      if (!compileResult.success) {
-        setTestResults([]);
-        return;
-      }
-      const results = await runTestCases(code, selectedLanguage, problem.testCases);
+      const { results } = await runTestCases(code, selectedLanguage!, problemId!);
       setTestResults(results);
-    } catch (error) {
-      console.error('Error running code:', error);
+      // If all test cases have the same error, show it globally
+      if (
+        results.length > 0 &&
+        results.every(r => r.error && r.error === results[0].error)
+      ) {
+        setTerminalError(results[0].error || 'Unknown error');
+      } else {
+        setTerminalError(null);
+      }
+    } catch (error: any) {
+      setTerminalError(error?.message || String(error));
     } finally {
       setIsRunning(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!code.trim() || !problem || !user) return;
+    setIsSubmitting(true);
+    setSubmissionVerdict(null);
+    setActiveTab('testcases');
+    try {
+      const { results, passedTests, totalTests } = await runTestCases(code, selectedLanguage!, problemId!);
+      setTestResults(results);
+      // Determine status/verdict
+      let status = 'Wrong Answer';
+      if (passedTests === totalTests) status = 'Accepted';
+      else if (results.some(r => r.error && r.error.toLowerCase().includes('compil'))) status = 'Compilation Error';
+      else if (results.some(r => r.error && r.error.toLowerCase().includes('runtime'))) status = 'Runtime Error';
+      else if (results.some(r => r.error && r.error.toLowerCase().includes('time limit'))) status = 'Time Limit Exceeded';
+
+      // Use only .id for user and problem
+      const userId = user.id;
+      const problemIdForSubmission = problem.id;
+      if (!userId || !problemIdForSubmission) {
+        console.warn('User or Problem ID missing for submission');
+      }
+
+      // Map results to backend-required structure
+      const mappedResults = results.map((r, idx) => {
+        const tc = problem.testCases[idx] || {};
+        return {
+          testCaseId: tc.id || String(idx),
+          input: tc.input || '',
+          expectedOutput: tc.expectedOutput || '',
+          output: r.output,
+          success: r.success,
+          executionTime: r.executionTime,
+          memoryUsage: r.memoryUsage,
+          error: r.error || '',
+        };
+      });
+
+      // Prepare submission data
+      const submissionData = {
+        user: userId,
+        problem: problemIdForSubmission,
+        code,
+        language: selectedLanguage,
+        results: mappedResults,
+        status,
+        verdict: status,
+        passedTests,
+        totalTests,
+        executionTime: mappedResults.reduce((acc, r) => acc + (r.executionTime || 0), 0),
+        memoryUsage: Math.max(...mappedResults.map(r => r.memoryUsage || 0)),
+      };
+      await submitSolution(submissionData);
+      setSubmissionVerdict(status);
+    } catch (error) {
+      setSubmissionVerdict('Submission failed');
+      console.error('Error submitting solution:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -148,19 +254,9 @@ const ProblemCodeEditor: React.FC = () => {
     if (!code.trim() || !customInput.trim() || !problem) return;
     setIsRunning(true);
     try {
-      const compileResult = await compileCode(code, selectedLanguage);
-      if (!compileResult.success) {
-        setCustomOutput(`Compilation Error: ${compileResult.error}`);
-        return;
-      }
-      const result = await runTestCases(code, selectedLanguage, [{
-        id: 'custom',
-        input: customInput,
-        expectedOutput: '',
-        isHidden: false
-      }]);
-      if (result[0]) {
-        setCustomOutput(result[0].output || result[0].error || 'No output');
+      const { results } = await executeCustomCode(code, selectedLanguage!, customInput);
+      if (results[0]) {
+        setCustomOutput(results[0].output || results[0].error || 'No output');
       }
     } catch (error) {
       setCustomOutput('Runtime Error: ' + error);
@@ -169,15 +265,28 @@ const ProblemCodeEditor: React.FC = () => {
     }
   };
 
-  if (loading) {
+  // Add a summary error extraction function
+  const getSummaryError = (results: ExecutionResult[]): string | null => {
+    if (!results || results.length === 0) return null;
+    // If all test cases have the same error, show it
+    if (results.every(r => r.error && r.error === results[0].error)) {
+      return results[0].error || null;
+    }
+    // If any test case has a compileError, show the first one
+    const compileError = results.find(r => r.compileError)?.compileError;
+    if (compileError) return compileError;
+    // If any test case has a runtimeError, show the first one
+    const runtimeError = results.find(r => r.runtimeError)?.runtimeError;
+    if (runtimeError) return runtimeError;
+    return null;
+  };
+
+  if (loading || languageLoading || !selectedLanguage) {
     return <div className="flex items-center justify-center h-screen"><LoadingSpinner size="lg" /></div>;
   }
   if (error || !problem) {
     return <div className="flex items-center justify-center h-screen text-red-500">{error || 'Problem not found'}</div>;
   }
-
-  const passedTests = testResults.filter(r => r.success).length;
-  const totalTests = testResults.length;
 
   // Custom gutter for Split
   const gutter = (index: number, direction: 'horizontal' | 'vertical') => {
@@ -243,7 +352,22 @@ const ProblemCodeEditor: React.FC = () => {
           {/* Left: Problem Details */}
           <div className={clsx('h-full overflow-y-auto border-r border-gray-200 dark:border-gray-900 transition-all', theme === 'dark' ? 'bg-gray-800' : 'bg-gray-200', leftCollapsed ? 'hidden' : '')}>
             <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-              <span className="font-bold text-lg text-gray-900 dark:text-white truncate">{problem.title}</span>
+              <div className="flex items-center">
+                <div className="relative group">
+                  <button
+                    onClick={() => window.history.back()}
+                    className="text-lg font-bold text-gray-800 dark:text-gray-200 focus:outline-none bg-transparent border-none p-0 m-0 hover:bg-transparent"
+                    aria-label="Back"
+                    style={{ background: 'none', border: 'none' }}
+                  >
+                    &larr;
+                  </button>
+                  <span className="absolute left-1/2 -translate-x-1/2 mt-1 px-2 py-1 rounded bg-gray-700 text-white text-xs opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10 whitespace-nowrap">
+                    Back
+                  </span>
+                </div>
+                <span className="font-bold text-lg text-gray-900 dark:text-white truncate ml-2">{problem.title}</span>
+              </div>
             </div>
             <div className="p-4 space-y-4">
               <div className="flex items-center gap-2">
@@ -319,8 +443,12 @@ const ProblemCodeEditor: React.FC = () => {
                   {isRunning ? <LoadingSpinner size="sm" /> : <Play className="h-4 w-4" />}
                   <span>Run</span>
                 </button>
-                <button className="flex items-center space-x-2 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm">
-                  <Save className="h-4 w-4" />
+                <button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting || isRunning}
+                  className="flex items-center space-x-2 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? <LoadingSpinner size="sm" /> : <Save className="h-4 w-4" />}
                   <span>Submit</span>
                 </button>
               </div>
@@ -462,25 +590,79 @@ const ProblemCodeEditor: React.FC = () => {
                   {activeTab === 'testcases' && problem && (
                     <div>
                       {problem.testCases.map((test, idx) => (
-                        <div key={test.id} className="mb-2 p-2 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600">
-                          <div className="flex items-center gap-2 mb-1">
-                            {test.isHidden ? <Clock className="h-4 w-4 text-yellow-400" /> : <CheckCircle2 className="h-4 w-4 text-green-500" />}
-                            <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">Test Case {idx + 1}</span>
+                        <div key={test.id} className="mb-2 flex flex-row items-stretch gap-2">
+                          {/* Test Case Info */}
+                          <div className="w-1/3 min-w-[180px] max-w-[220px] p-2 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600 flex flex-col justify-between">
+                            <div className="flex items-center gap-2 mb-1">
+                              {testResults[idx] ? (
+                                testResults[idx].success ? (
+                                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                ) : (
+                                  <XCircle className="h-4 w-4 text-red-500" />
+                                )
+                              ) : (
+                                test.isHidden ? <Clock className="h-4 w-4 text-yellow-400" /> : null
+                              )}
+                              <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">Test Case {idx + 1}</span>
+                            </div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400">
+                              <strong>Input:</strong> <pre className="inline whitespace-pre-wrap">{test.input}</pre>
+                            </div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400">
+                              <strong>Expected Output:</strong> <pre className="inline whitespace-pre-wrap">{test.expectedOutput}</pre>
+                            </div>
                           </div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400">
-                            <strong>Input:</strong> <pre className="inline whitespace-pre-wrap">{test.input}</pre>
+                          {/* User Output & Error */}
+                          <div className="flex-1 p-2 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 flex flex-col justify-between">
+                            <div className="text-xs text-gray-700 dark:text-gray-200">
+                              <strong>Your Output:</strong>
+                              <pre className="whitespace-pre-wrap break-all">{testResults[idx]?.output ?? ''}</pre>
+                            </div>
+                            {testResults[idx]?.error && (
+                              <div className="mt-1 text-xs text-red-600 dark:text-red-400">
+                                <strong>Error:</strong> <pre className="inline whitespace-pre-wrap">{testResults[idx].error}</pre>
+                              </div>
+                            )}
                           </div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400">
-                            <strong>Expected Output:</strong> <pre className="inline whitespace-pre-wrap">{test.expectedOutput}</pre>
-                          </div>
-                          {testResults[idx] && (
-                            <div className={clsx('mt-1 text-xs', testResults[idx].success ? 'text-green-600' : 'text-red-600')}>{testResults[idx].success ? 'Passed' : 'Failed'}</div>
-                          )}
                         </div>
                       ))}
                       {totalTests > 0 && (
                         <div className="mt-2 text-xs text-gray-700 dark:text-gray-200">
                           Passed {passedTests} / {totalTests} test cases
+                        </div>
+                      )}
+                      {/* Test Results Status */}
+                      {totalTests > 0 && testResults.length > 0 && (
+                        <div className="mt-2 p-2 bg-gray-100 dark:bg-gray-700 rounded">
+                          <div className="flex items-center gap-4 text-sm">
+                            <div className={clsx('font-semibold', passedTests === totalTests ? 'text-green-600' : 'text-red-500')}>
+                              {passedTests === totalTests ? 'All Tests Passed' : `${passedTests}/${totalTests} Tests Passed`}
+                            </div>
+                            {testResults.some(r => r.executionTime !== undefined) && (
+                              <div className="text-xs text-gray-600 dark:text-gray-400">
+                                Avg Time: {Math.round(testResults.reduce((acc, r) => acc + (r.executionTime || 0), 0) / testResults.length)}ms
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      {/* Terminal Error Display */}
+                      {terminalError && (
+                        <div className="mt-3 p-3 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 rounded text-red-700 dark:text-red-300 text-xs whitespace-pre-wrap">
+                          <strong>Terminal Error:</strong>
+                          {terminalError.trim() === 'Execution error' ? (
+                            <div>
+                              <pre className="whitespace-pre-wrap break-all">Internal server error or unknown backend error. Please check your code or contact support.</pre>
+                            </div>
+                          ) : (
+                            <pre className="whitespace-pre-wrap break-all">{terminalError}</pre>
+                          )}
+                        </div>
+                      )}
+                      {getSummaryError(testResults) && (
+                        <div className="mb-3 p-3 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 rounded text-red-700 dark:text-red-300 text-xs whitespace-pre-wrap">
+                          <strong>Error:</strong>
+                          <pre className="whitespace-pre-wrap break-all">{getSummaryError(testResults)}</pre>
                         </div>
                       )}
                     </div>
@@ -492,33 +674,64 @@ const ProblemCodeEditor: React.FC = () => {
                       ) : (
                         testResults.map((result, idx) => (
                           <div key={idx} className={clsx('mb-2 p-2 rounded', result.success ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20')}>
-                            {result.success ? 'Passed' : 'Failed'}
+                            <div className="flex flex-col md:flex-row md:items-center gap-2">
+                              <span className={clsx('font-semibold', result.success ? 'text-green-600' : 'text-red-500')}>{result.success ? 'Passed' : 'Failed'}</span>
+                              <span className="text-xs text-gray-700 dark:text-gray-200">Execution Time: {result.executionTime !== undefined ? result.executionTime + ' ms' : 'N/A'}</span>
+                              <span className="text-xs text-gray-700 dark:text-gray-200">Memory: {result.memoryUsage !== undefined ? result.memoryUsage + ' MB' : 'N/A'}</span>
+                            </div>
+                            {result.error && (
+                              <div className="mt-1 text-xs text-red-600 dark:text-red-400">
+                                <strong>Error:</strong> <pre className="inline whitespace-pre-wrap">{result.error}</pre>
+                              </div>
+                            )}
+                            {result.output && !result.success && (
+                              <div className="mt-1 text-xs text-gray-700 dark:text-gray-200">
+                                <strong>Your Output:</strong> <pre className="inline whitespace-pre-wrap">{result.output}</pre>
+                              </div>
+                            )}
                           </div>
                         ))
                       )}
                     </div>
                   )}
                   {activeTab === 'custom' && (
-                    <div>
-                      <textarea
-                        value={customInput}
-                        onChange={(e) => setCustomInput(e.target.value)}
-                        className="w-full h-20 rounded p-2 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
-                        placeholder="Enter custom input"
-                      />
-                      {/* <button
-                        onClick={handleCustomRun}
-                        disabled={isRunning}
-                        className="mt-2 px-4 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 dark:hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm"
-                      >
-                        {isRunning ? <LoadingSpinner size="sm" /> : 'Run'}
-                      </button> */}
-                      {customOutput && (
-                        <div className="mt-2 p-2 bg-gray-50 rounded-lg dark:bg-gray-800">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex flex-row gap-2 items-start">
+                        {/* Input Box (reduced width, colored border) */}
+                        <textarea
+                          value={customInput}
+                          onChange={(e) => setCustomInput(e.target.value)}
+                          className="w-1/2 min-w-[180px] max-w-[320px] h-20 rounded p-2 bg-white dark:bg-gray-800 border-2 border-blue-500 dark:border-blue-400"
+                          placeholder="Enter custom input"
+                        />
+                        {/* Output Box beside input */}
+                        <div className="flex-1 p-2 bg-gray-50 rounded-lg dark:bg-gray-800 border border-gray-200 dark:border-gray-700 min-h-[80px]">
                           <strong>Output:</strong>
                           <pre className="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-200">{customOutput}</pre>
                         </div>
+                      </div>
+                      {/* Test Results Status */}
+                      {totalTests > 0 && (
+                        <div className="flex items-center gap-4 text-sm">
+                          <div className={clsx('font-semibold', passedTests === totalTests ? 'text-green-600' : 'text-red-500')}>
+                            {passedTests === totalTests ? 'All Tests Passed' : `${passedTests}/${totalTests} Tests Passed`}
+                          </div>
+                          {testResults.length > 0 && (
+                            <div className="text-xs text-gray-600 dark:text-gray-400">
+                              {testResults.some(r => r.executionTime !== undefined) && (
+                                <span>Avg Time: {Math.round(testResults.reduce((acc, r) => acc + (r.executionTime || 0), 0) / testResults.length)}ms</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       )}
+                      <button
+                        onClick={handleCustomRun}
+                        disabled={isRunning}
+                        className="mt-2 w-fit px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm"
+                      >
+                        {isRunning ? <LoadingSpinner size="sm" /> : 'Run'}
+                      </button>
                     </div>
                   )}
                 </div>
@@ -531,6 +744,13 @@ const ProblemCodeEditor: React.FC = () => {
                   <Terminal className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Result & Test Cases</span>
                 </div>
+              </div>
+            )}
+            {submissionVerdict && (
+              <div className={clsx('mt-2 text-sm font-semibold',
+                submissionVerdict === 'Accepted' ? 'text-green-600' : 'text-red-500')}
+              >
+                {submissionVerdict}
               </div>
             )}
           </div>

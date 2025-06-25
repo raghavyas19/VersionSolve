@@ -9,6 +9,7 @@ const connectDB = require('./config/db');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const aiRouter = require('./routes/ai');
+const submissionRouter = require('./routes/submission');
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/compiler', compilerRouter); // Compiler route is now public
 app.use('/api/problem', problemRouter);
 app.use('/api/ai', aiRouter);
+app.use('/api/submission', submissionRouter);
 
 connectDB();
 
