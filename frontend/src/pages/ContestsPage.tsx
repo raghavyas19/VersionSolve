@@ -13,7 +13,6 @@ const ContestsPage: React.FC = () => {
   const handleContestAction = (contestId: string, action: 'join' | 'register') => {
     if (user) {
       // Handle contest action for authenticated users
-      console.log(`${action} contest ${contestId}`);
     } else {
       setRedirectPath('/contests');
       navigate('/login', { state: { from: '/contests' } });

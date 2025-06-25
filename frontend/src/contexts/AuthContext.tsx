@@ -44,7 +44,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             initializeMemoryManagement(userData.id || userData._id);
           }
         } catch (err) {
-          console.error('Token verification error:', err);
           localStorage.removeItem('token');
           setUser(null);
           // Clear any potential user data on token verification failure
@@ -81,7 +80,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       return true;
     } catch (err) {
-      console.error('Login error:', err);
       return false;
     }
   };
@@ -95,8 +93,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
     localStorage.removeItem('token');
     setRedirectPath(null);
-    
-    console.log('User logged out and all data cleared');
   };
 
   return (

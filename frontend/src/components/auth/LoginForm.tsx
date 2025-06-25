@@ -62,10 +62,7 @@ const LoginForm: React.FC = () => {
       <div className="w-full max-w-md">
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-center mb-8">
-            <div className="flex items-center space-x-2">
-              <Code2 className="h-8 w-8 text-blue-600" />
-              <span className="text-2xl font-bold text-gray-900 dark:text-white">VersionSolve</span>
-            </div>
+            <img src="/Logo.png" alt="VersionSolve Logo" style={{width: '8rem'}} />
           </div>
 
           <div className="text-center mb-8">

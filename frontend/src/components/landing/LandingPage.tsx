@@ -91,14 +91,14 @@ const LandingPage: React.FC = () => {
       </div>
 
       {/* Navigation */}
-      <nav className="relative z-50 px-4 sm:px-6 py-4">
+      <nav className="relative z-50 px-2 sm:px-6 py-5">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Link to="/">
               <img
                 src="/Logo.png"
                 alt="VersionSolve Logo"
-                style={{ width: '8rem' }}
+                style={{ width: '7rem' }}
               />
             </Link>
           </div>

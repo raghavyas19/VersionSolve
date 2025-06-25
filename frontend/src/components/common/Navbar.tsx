@@ -12,9 +12,8 @@ const Navbar: React.FC = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 border-b px-4 lg:px-6 py-3 shadow-md" style={{ background: 'var(--color-surface)', color: 'var(--color-text)' }}>
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Link to={user ? "/dashboard" : "/"} className="flex items-center space-x-2">
-            <Code2 className="h-8 w-8 text-blue-600" />
-            <span className="text-xl font-bold text-gray-900 dark:text-white">VersionSolve</span>
+          <Link to={user ? "/" : "/"} className="flex items-center space-x-2 mx-12">
+            <img src="/Logo.png" alt="VersionSolve Logo" style={{ width: '6rem' }} />
           </Link>
           
           <div className="relative hidden md:block">

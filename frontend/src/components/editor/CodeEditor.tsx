@@ -117,7 +117,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ problem, onBack }) => {
       const results = await runTestCases(code, selectedLanguage, problem.testCases);
       setTestResults(results);
     } catch (error) {
-      console.error('Error running code:', error);
+      // console.error('Error running code:', error);
     } finally {
       setIsRunning(false);
     }

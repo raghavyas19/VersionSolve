@@ -97,7 +97,7 @@ const OnlineCompiler: React.FC = () => {
       const review = await generateAIReview(code, selectedLanguage);
       setAiReview(review);
     } catch (error) {
-      console.error('AI Review failed:', error);
+      // console.error('AI Review failed:', error);
     } finally {
       setIsAnalyzing(false);
     }
