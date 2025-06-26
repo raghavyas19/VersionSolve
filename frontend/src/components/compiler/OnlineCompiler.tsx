@@ -155,8 +155,7 @@ const OnlineCompiler: React.FC = () => {
               <ArrowLeft className="h-5 w-5" />
             </Link>
             <div className="flex items-center space-x-2">
-              <Code2 className="h-6 w-6 text-blue-600" />
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Online Compiler</h1>
+              <img src="/Logo.png" alt="Logo" style={{width: '6rem'}} />
             </div>
             
             <select

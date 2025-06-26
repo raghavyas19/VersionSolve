@@ -1,7 +1,14 @@
 const Problem = require('../models/Problem');
+const BaseController = require('./baseController');
+const { asyncHandler } = require('../middlewares/errorHandler');
 
-exports.createProblem = async (req, res) => {
-  try {
+class ProblemController extends BaseController {
+  constructor() {
+    super(Problem);
+  }
+
+  // Override create method to add custom validation
+  create = asyncHandler(async (req, res) => {
     const {
       title,
       description,
@@ -17,9 +24,11 @@ exports.createProblem = async (req, res) => {
       isPublic = true,
       points = 100
     } = req.body;
+
     if (!title || !description || !difficulty) {
       return res.status(400).json({ error: 'Title, description, and difficulty are required' });
     }
+
     const problem = new Problem({
       title,
       description,
@@ -36,30 +45,31 @@ exports.createProblem = async (req, res) => {
       points,
       createdAt: new Date()
     });
+
     await problem.save();
     res.status(201).json({ message: 'Problem created successfully', problem });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+  });
 
-exports.getProblems = async (req, res) => {
-  try {
-    const problems = await Problem.find();
+  // Override getAll to remove pagination for problems list
+  getAll = asyncHandler(async (req, res) => {
+    const problems = await this.model.find();
     res.status(200).json(problems);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+  });
 
-exports.getProblemById = async (req, res) => {
-  try {
-    const problem = await Problem.findById(req.params.id);
-    if (!problem) {
+  // Override getById to return the document directly for frontend compatibility
+  getById = asyncHandler(async (req, res) => {
+    const document = await this.model.findById(req.params.id);
+    if (!document) {
       return res.status(404).json({ error: 'Problem not found' });
     }
-    res.status(200).json(problem);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+    res.status(200).json(document);
+  });
+}
+
+const problemController = new ProblemController();
+
+module.exports = {
+  createProblem: problemController.create,
+  getProblems: problemController.getAll,
+  getProblemById: problemController.getById
 };
