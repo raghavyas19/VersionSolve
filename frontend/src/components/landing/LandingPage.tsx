@@ -96,7 +96,7 @@ const LandingPage: React.FC = () => {
           <div className="flex items-center space-x-2">
             <Link to="/">
               <img
-                src="/Logo.png"
+                src={`${import.meta.env.BASE_URL}Logo.png`}
                 alt="VersionSolve Logo"
                 style={{ width: '7rem' }}
               />

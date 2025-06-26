@@ -26,7 +26,7 @@ function SlimTopNavbar({ user, theme, toggleTheme }: { user: any, theme: string,
       }
       style={{ minHeight: 36, height: 36 }}
     >
-      <img src="/Favicon.png" alt="Favicon" className="w-7 h-7" />
+      <img src={`${import.meta.env.BASE_URL}Favicon.png`} alt="Favicon" className="w-7 h-7" />
       <div className="flex items-center gap-2">
         <button onClick={toggleTheme} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
           {theme === 'dark' ? <Sun className="h-4 w-4 text-yellow-400" /> : <Moon className="h-4 w-4 text-gray-700" />}

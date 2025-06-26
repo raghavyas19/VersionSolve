@@ -13,7 +13,7 @@ const Navbar: React.FC = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <Link to={user ? "/" : "/"} className="flex items-center space-x-2 mx-12">
-            <img src="/Logo.png" alt="VersionSolve Logo" style={{ width: '6rem' }} />
+            <img src={`${import.meta.env.BASE_URL}Logo.png`} alt="VersionSolve Logo" style={{ width: '6rem' }} />
           </Link>
           
           <div className="relative hidden md:block">

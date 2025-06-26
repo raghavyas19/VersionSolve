@@ -106,7 +106,7 @@ const SignupForm: React.FC = () => {
       <div className="w-full max-w-md">
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-center mb-4">
-            <img src="/Logo.png" alt="VersionSolve Logo" style={{width: '8rem'}}/>
+            <img src={`${import.meta.env.BASE_URL}Logo.png`} alt="VersionSolve Logo" style={{width: '8rem'}}/>
           </div>
 
           <div className="text-center mb-8">

@@ -155,7 +155,7 @@ const OnlineCompiler: React.FC = () => {
               <ArrowLeft className="h-5 w-5" />
             </Link>
             <div className="flex items-center space-x-2">
-              <img src="/Logo.png" alt="Logo" style={{width: '6rem'}} />
+              <img src={`${import.meta.env.BASE_URL}Logo.png`} alt="Logo" style={{width: '6rem'}} />
             </div>
             
             <select
