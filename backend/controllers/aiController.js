@@ -1,4 +1,4 @@
-const { aiCodeReview } = require('../utils/aiCodeReview');
+const { aiCodeReview } = require('../utils/openaiCodeReview');
 const { asyncHandler } = require('../middlewares/errorHandler');
 
 exports.getAIReview = asyncHandler(async (req, res) => {

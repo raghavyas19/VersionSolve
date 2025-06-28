@@ -37,7 +37,7 @@ passport.use(new GoogleStrategy({
       user = await new User({
         googleId: profile.id,
         name: profile.displayName,
-        contact: email, // Use email as contact
+        email: email, // Use email as email
         username: finalUsername,
       }).save();
     }

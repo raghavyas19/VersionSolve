@@ -26,7 +26,7 @@ const submissionSchema = new mongoose.Schema({
   passedTests: { type: Number, default: 0 },
   totalTests: { type: Number, default: 0 },
   submittedAt: { type: Date, default: Date.now },
-  aiReview: { type: mongoose.Schema.Types.Mixed }, // Optional, for future AI review integration
+  aiReview: { type: mongoose.Schema.Types.Mixed },
 });
 
 module.exports = mongoose.model('Submission', submissionSchema); 

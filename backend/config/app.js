@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
 const passport = require('passport');
+const cookieParser = require('cookie-parser');
+const csurf = require('csurf');
 
 // Import middleware
 const { errorHandler, notFound } = require('../middlewares/errorHandler');
@@ -14,6 +16,8 @@ const compilerRouter = require('../routes/compiler');
 const problemRouter = require('../routes/problem');
 const aiRouter = require('../routes/ai');
 const submissionRouter = require('../routes/submission');
+const vguyRouter = require('../routes/vguy');
+const adminRouter = require('../routes/admin');
 
 const createApp = () => {
   const app = express();
@@ -61,6 +65,16 @@ const createApp = () => {
     }
   }));
 
+  // Cookie parser middleware
+  app.use(cookieParser());
+
+  // CSRF protection for admin routes (cookie-based)
+  const csrfProtection = csurf({ cookie: { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production' } });
+  app.use('/api/admin', csrfProtection);
+  app.get('/api/admin/csrf-token', csrfProtection, (req, res) => {
+    res.json({ csrfToken: req.csrfToken() });
+  });
+
   // Passport middleware
   app.use(passport.initialize());
   app.use(passport.session());
@@ -84,6 +98,8 @@ const createApp = () => {
   app.use('/api/problem', problemRouter);
   app.use('/api/ai', aiRouter);
   app.use('/api/submission', submissionRouter);
+  app.use('/api/vguy', vguyRouter);
+  app.use('/api/admin', adminRouter);
 
   // 404 handler
   app.use(notFound);

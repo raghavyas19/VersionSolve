@@ -53,7 +53,15 @@ class ProblemController extends BaseController {
   // Override getAll to remove pagination for problems list
   getAll = asyncHandler(async (req, res) => {
     const problems = await this.model.find();
-    res.status(200).json(problems);
+    
+    // Transform MongoDB documents to include id field for frontend compatibility
+    const transformedProblems = problems.map(problem => {
+      const problemObj = problem.toObject();
+      problemObj.id = problemObj._id;
+      return problemObj;
+    });
+    
+    res.status(200).json(transformedProblems);
   });
 
   // Override getById to return the document directly for frontend compatibility
@@ -62,7 +70,12 @@ class ProblemController extends BaseController {
     if (!document) {
       return res.status(404).json({ error: 'Problem not found' });
     }
-    res.status(200).json(document);
+    
+    // Transform MongoDB document to include id field for frontend compatibility
+    const problem = document.toObject();
+    problem.id = problem._id;
+    
+    res.status(200).json(problem);
   });
 }
 

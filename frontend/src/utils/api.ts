@@ -5,6 +5,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 });
 
 api.interceptors.request.use(
@@ -42,7 +43,7 @@ interface TestCase {
 export const register = async (data: {
   name: string;
   username: string;
-  contact: string;
+  email: string;
   password: string;
   confirmPassword: string;
 }) => {
@@ -50,8 +51,8 @@ export const register = async (data: {
   return response.data;
 };
 
-export const login = async (contact: string, password: string) => {
-  const response = await api.post('/auth/login', { username: contact, password });
+export const login = async (email: string, password: string) => {
+  const response = await api.post('/auth/login', { username: email, password });
   return response.data;
 };
 
@@ -74,8 +75,8 @@ export const fetchProblemById = async (id: string) => {
   return response.data;
 };
 
-export const createProblem = async (problemData: any) => {
-  const response = await api.post('/problem/create', problemData);
+export const createProblem = async (problemData: any, csrfToken?: string) => {
+  const response = await api.post('/problem/create', problemData, csrfToken ? { headers: { 'x-csrf-token': csrfToken } } : undefined);
   return response.data;
 };
 
@@ -110,6 +111,45 @@ export const runTestCases = async (
       },
     ];
   }
+};
+
+export const fetchUserSubmissions = async (problemId?: string, page: number = 1, limit: number = 20) => {
+  const params = new URLSearchParams();
+  if (problemId) params.append('problemId', problemId);
+  params.append('page', page.toString());
+  params.append('limit', limit.toString());
+  
+  const response = await api.get(`/submission?${params.toString()}`);
+  return response.data;
+};
+
+export const adminSignup = async (data: {
+  name: string;
+  email: string;
+  password: string;
+}, csrfToken?: string) => {
+  const response = await api.post('/admin/auth/signup', data, csrfToken ? { headers: { 'x-csrf-token': csrfToken } } : undefined);
+  return response.data;
+};
+
+export const adminLogin = async (email: string, password: string, csrfToken?: string) => {
+  const response = await api.post('/admin/auth/login', { email, password }, csrfToken ? { headers: { 'x-csrf-token': csrfToken } } : undefined);
+  return response.data;
+};
+
+export const adminVerify = async () => {
+  const response = await api.get('/admin/verify');
+  return response.data;
+};
+
+export const adminLogout = async () => {
+  const response = await api.post('/admin/logout');
+  return response.data;
+};
+
+export const getAdminCsrfToken = async () => {
+  const response = await api.get('/admin/csrf-token');
+  return response.data.csrfToken;
 };
 
 export default api;

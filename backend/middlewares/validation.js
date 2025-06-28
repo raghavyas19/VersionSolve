@@ -28,10 +28,10 @@ const validateRegistration = [
     .isLength({ min: 3, max: 30 })
     .matches(/^[a-zA-Z0-9_]+$/)
     .withMessage('Username must be 3-30 characters and contain only letters, numbers, and underscores'),
-  body('contact')
+  body('email')
     .trim()
     .isEmail()
-    .withMessage('Contact must be a valid email address'),
+    .withMessage('Email must be a valid email address'),
   body('password')
     .isLength({ min: 6 })
     .withMessage('Password must be at least 6 characters long'),
@@ -89,8 +89,8 @@ const validateCodeExecution = [
     .notEmpty()
     .withMessage('Code is required'),
   body('language')
-    .isIn(['javascript', 'python', 'java', 'cpp', 'c'])
-    .withMessage('Language must be javascript, python, java, cpp, or c'),
+    .isIn(['c', 'cpp', 'java', 'python'])
+    .withMessage('Language must be c, cpp, java, or python'),
   body('input')
     .optional()
     .isString()
@@ -100,7 +100,7 @@ const validateCodeExecution = [
 
 // Submission validation
 const validateSubmission = [
-  body('problemId')
+  body('problem')
     .isMongoId()
     .withMessage('Valid problem ID is required'),
   body('code')
@@ -108,8 +108,8 @@ const validateSubmission = [
     .notEmpty()
     .withMessage('Code is required'),
   body('language')
-    .isIn(['javascript', 'python', 'java', 'cpp', 'c'])
-    .withMessage('Language must be javascript, python, java, cpp, or c'),
+    .isIn(['c', 'cpp', 'java', 'python'])
+    .withMessage('Language must be c, cpp, java, or python'),
   handleValidationErrors
 ];
 

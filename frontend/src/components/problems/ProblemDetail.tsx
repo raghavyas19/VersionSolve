@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, MemoryStick, Users, CheckCircle2, Play, Lock } from 'lucide-react';
+import { ArrowLeft, Clock, MemoryStick, Users, CheckCircle2, Play, Lock, Code, XCircle, AlertCircle, Loader2 } from 'lucide-react';
 // import { mockProblems } from '../../data/mockData';
-import { DIFFICULTY_COLORS } from '../../utils/constants';
+import { DIFFICULTY_COLORS, VERDICT_COLORS } from '../../utils/constants';
 import { useAuth } from '../../contexts/AuthContext';
 import CodeEditor from '../editor/CodeEditor';
 import { clsx } from 'clsx';
-import { fetchProblemById } from '../../utils/api';
+import { fetchProblemById, fetchUserSubmissions } from '../../utils/api';
+import { formatDistanceToNow } from 'date-fns';
 
 const ProblemDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -18,6 +19,9 @@ const ProblemDetail: React.FC = () => {
   const [problem, setProblem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [submissionsLoading, setSubmissionsLoading] = useState(false);
+  const [submissionsError, setSubmissionsError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadProblem = async () => {
@@ -68,6 +72,44 @@ const ProblemDetail: React.FC = () => {
   const handleSignupRedirect = () => {
     setRedirectPath(`/problems/${id}`);
     navigate('/signup', { state: { from: `/problems/${id}` } });
+  };
+
+  const loadSubmissions = async () => {
+    if (!user || !id) return;
+    
+    try {
+      setSubmissionsLoading(true);
+      setSubmissionsError(null);
+      const response = await fetchUserSubmissions(id, 1, 50); // Load first 50 submissions for this problem
+      setSubmissions(response.submissions);
+    } catch (err: any) {
+      setSubmissionsError(err.response?.data?.message || 'Failed to load submissions');
+      console.error('Error loading submissions:', err);
+    } finally {
+      setSubmissionsLoading(false);
+    }
+  };
+
+  const handleTabChange = (tabId: 'description' | 'submissions' | 'discussion') => {
+    setActiveTab(tabId);
+    if (tabId === 'submissions' && user) {
+      loadSubmissions();
+    }
+  };
+
+  const getVerdictIcon = (status: string) => {
+    switch (status) {
+      case 'Accepted':
+        return CheckCircle2;
+      case 'Wrong Answer':
+      case 'Runtime Error':
+      case 'Compilation Error':
+      case 'Time Limit Exceeded':
+      case 'Memory Limit Exceeded':
+        return XCircle;
+      default:
+        return AlertCircle;
+    }
   };
 
   return (
@@ -168,7 +210,7 @@ const ProblemDetail: React.FC = () => {
                 ].map((tab) => (
                   <button
                     key={tab.id}
-                    onClick={() => setActiveTab(tab.id as any)}
+                    onClick={() => handleTabChange(tab.id as any)}
                     className={clsx(
                       'py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap',
                       activeTab === tab.id
@@ -221,7 +263,98 @@ const ProblemDetail: React.FC = () => {
                 <div>
                   <h3 className="text-lg font-semibold mb-4">Your Submissions</h3>
                   {user ? (
-                    <p className="text-gray-500 dark:text-gray-400">No submissions yet. Solve the problem to see your submissions here.</p>
+                    <>
+                      {submissionsLoading ? (
+                        <div className="text-center py-8">
+                          <Loader2 className="mx-auto h-8 w-8 text-blue-500 animate-spin" />
+                          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Loading submissions...</p>
+                        </div>
+                      ) : submissionsError ? (
+                        <div className="text-center py-8">
+                          <AlertCircle className="mx-auto h-12 w-12 text-red-400" />
+                          <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Error loading submissions</h3>
+                          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{submissionsError}</p>
+                        </div>
+                      ) : submissions.length > 0 ? (
+                        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                          <div className="overflow-x-auto">
+                            <table className="w-full">
+                              <thead className="bg-gray-50 dark:bg-gray-700">
+                                <tr>
+                                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    Language
+                                  </th>
+                                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    Status
+                                  </th>
+                                  <th className="hidden md:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    Runtime
+                                  </th>
+                                  <th className="hidden md:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    Memory
+                                  </th>
+                                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    Submitted
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                                {submissions.map((submission) => {
+                                  const VerdictIcon = getVerdictIcon(submission.status);
+                                  
+                                  return (
+                                    <tr key={submission._id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                      <td className="px-4 sm:px-6 py-4">
+                                        <div className="flex items-center space-x-2">
+                                          <Code className="h-4 w-4 text-gray-400" />
+                                          <span className="text-sm font-medium text-gray-900 dark:text-white capitalize">
+                                            {submission.language}
+                                          </span>
+                                        </div>
+                                      </td>
+                                      <td className="px-4 sm:px-6 py-4">
+                                        <div className="flex items-center space-x-2">
+                                          <VerdictIcon className={clsx(
+                                            'h-4 w-4 flex-shrink-0',
+                                            submission.status === 'Accepted' ? 'text-green-500' : 'text-red-500'
+                                          )} />
+                                          <span className={clsx(
+                                            'inline-flex px-2 py-1 text-xs font-medium rounded-full',
+                                            VERDICT_COLORS[submission.status]
+                                          )}>
+                                            {submission.status}
+                                          </span>
+                                        </div>
+                                      </td>
+                                      <td className="hidden md:table-cell px-4 sm:px-6 py-4 text-sm text-gray-900 dark:text-white">
+                                        {submission.executionTime ? `${submission.executionTime}ms` : '-'}
+                                      </td>
+                                      <td className="hidden md:table-cell px-4 sm:px-6 py-4 text-sm text-gray-900 dark:text-white">
+                                        {submission.memoryUsage ? `${submission.memoryUsage.toFixed(1)}MB` : '-'}
+                                      </td>
+                                      <td className="px-4 sm:px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                                        <div className="flex items-center space-x-1">
+                                          <Clock className="h-3 w-3 flex-shrink-0" />
+                                          <span className="truncate">{formatDistanceToNow(new Date(submission.submittedAt), { addSuffix: true })}</span>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <Code className="mx-auto h-12 w-12 text-gray-400" />
+                          <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No submissions yet</h3>
+                          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            Solve the problem to see your submissions here.
+                          </p>
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <div className="text-center py-8">
                       <Lock className="h-12 w-12 text-gray-400 mx-auto mb-4" />

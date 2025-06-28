@@ -10,9 +10,6 @@ import {
   Star,
   Play,
   BookOpen,
-  Award,
-  TrendingUp,
-  Globe,
   Shield,
   Sparkles,
   ChevronDown
@@ -36,7 +33,7 @@ const LandingPage: React.FC = () => {
     {
       icon: Code2,
       title: "Multi-Language Support",
-      description: "Code in C++, Java, Python, JavaScript and more with real-time compilation",
+      description: "Code in C++, Java, Python, and C with real-time compilation",
       color: "from-blue-500 to-cyan-500"
     },
     {
@@ -81,6 +78,47 @@ const LandingPage: React.FC = () => {
     }
   ];
 
+  // VGuy Chatbot Widget
+  const [vguyOpen, setVGuyOpen] = useState(false);
+  const [vguyMessages, setVGuyMessages] = useState([
+    { sender: 'VGuy', text: 'Hi! I\'m VGuy. Ask me anything about VersionSolve!' }
+  ]);
+  const [vguyInput, setVGuyInput] = useState('');
+  const [vguyLoading, setVGuyLoading] = useState(false);
+
+  const handleVGuySend = async () => {
+    if (!vguyInput.trim()) return;
+    const userMsg = { sender: 'You', text: vguyInput };
+    setVGuyMessages((msgs) => [...msgs, userMsg]);
+    setVGuyInput('');
+    setVGuyLoading(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/vguy`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: vguyInput })
+      });
+      const data = await res.json();
+      if (res.ok && data.reply) {
+        setVGuyMessages((msgs) => [
+          ...msgs,
+          { sender: 'VGuy', text: data.reply }
+        ]);
+      } else {
+        setVGuyMessages((msgs) => [
+          ...msgs,
+          { sender: 'VGuy', text: data.error || 'VGuy could not answer right now.' }
+        ]);
+      }
+    } catch (err) {
+      setVGuyMessages((msgs) => [
+        ...msgs,
+        { sender: 'VGuy', text: 'VGuy could not answer right now.' }
+      ]);
+    }
+    setVGuyLoading(false);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 text-white overflow-hidden">
       {/* Animated Background */}
@@ -92,8 +130,8 @@ const LandingPage: React.FC = () => {
 
       {/* Navigation */}
       <nav className="relative z-50 px-2 sm:px-6 py-5">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-2">
+        <div className="max-w-7xl mx-auto flex items-center justify-between md:grid md:grid-cols-3 md:items-center">
+          <div className="flex items-center space-x-2 justify-self-start">
             <Link to="/">
               <img
                 src={`${import.meta.env.BASE_URL}Logo.png`}
@@ -103,14 +141,14 @@ const LandingPage: React.FC = () => {
             </Link>
           </div>
 
-          <div className="hidden md:flex items-center space-x-6 lg:space-x-8 text-lg">
+          <div className="hidden md:flex items-center space-x-6 lg:space-x-8 text-lg justify-self-center">
             <Link to="/problems" className="hover:text-blue-400 transition-colors">Problems</Link>
             <Link to="/contests" className="hover:text-blue-400 transition-colors">Contests</Link>
             <Link to="/leaderboard" className="hover:text-blue-400 transition-colors">Leaderboard</Link>
             <Link to="/compiler" className="hover:text-blue-400 transition-colors">Compiler</Link>
           </div>
 
-          <div className="flex items-center space-x-2 sm:space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4 justify-self-end">
             {user ? (
               <Link
                 to="/dashboard"
@@ -406,11 +444,78 @@ const LandingPage: React.FC = () => {
 
           <div className="border-t border-gray-700 mt-8 pt-8 text-center">
             <p className="text-gray-400 text-sm">
-              © 2024 VersionSolve. All rights reserved. Built with ❤️ for developers.
+              © 2024 VersionSolve. All rights reserved. Built by Raghav Vyas with ❤️.
             </p>
           </div>
         </div>
       </footer>
+
+      {/* VGuy Chatbot Floating Widget */}
+      <div className="fixed bottom-3 right-3 z-50 sm:bottom-6 sm:right-6">
+        {vguyOpen ? (
+          <div className="w-[95vw] max-w-[400px] h-[60vh] max-h-[500px] bg-gray-900 rounded-2xl shadow-2xl border border-blue-500 flex flex-col mx-auto sm:w-96 sm:h-[500px]">
+            <div className="flex items-center justify-between px-4 py-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-t-2xl">
+              <div className="flex items-center space-x-2">
+                <span className="text-base sm:text-lg font-bold truncate">VGuy</span>
+                <Sparkles className="h-5 w-5 text-yellow-300 animate-bounce" />
+              </div>
+              <button onClick={() => setVGuyOpen(false)} className="text-white hover:text-gray-200 hover:bg-gray-700/50 text-3xl leading-none ml-2 px-1 py-1 rounded-md focus:outline-none transition-colors w-8 h-8 flex items-center justify-center">
+                ×
+              </button>
+            </div>
+            <div className="flex-1 p-2 sm:p-3 overflow-y-auto space-y-2 bg-gray-950">
+              {vguyMessages.map((msg, idx) => (
+                <div key={idx} className={`flex ${msg.sender === 'You' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`px-3 py-2 rounded-lg text-sm max-w-[85vw] sm:max-w-[75%] ${msg.sender === 'You' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-blue-200'}`} style={{ wordBreak: 'break-word' }}>
+                    <span className="font-semibold">{msg.sender === 'You' ? 'You' : 'VGuy'}: </span>{msg.text}
+                  </div>
+                </div>
+              ))}
+              {vguyLoading && (
+                <div className="flex justify-start">
+                  <div className="px-3 py-2 rounded-lg text-sm bg-gray-800 text-blue-200 animate-pulse">VGuy is typing...</div>
+                </div>
+              )}
+            </div>
+            <div className="mt-auto p-2 border-t border-gray-700 bg-gray-900 flex items-center space-x-2 rounded-b-2xl">
+              <input
+                type="text"
+                className="flex-1 px-3 py-2 rounded-lg bg-gray-800 text-white focus:outline-none text-base sm:text-sm"
+                placeholder="Ask VGuy about VersionSolve..."
+                value={vguyInput}
+                onChange={e => setVGuyInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleVGuySend(); }}
+                disabled={vguyLoading}
+                style={{ minWidth: 0 }}
+              />
+              <button
+                onClick={handleVGuySend}
+                className="bg-sky-500 hover:bg-sky-400 text-white px-4 py-2 rounded-lg font-semibold text-base sm:text-sm cursor-pointer"
+                disabled={vguyLoading || !vguyInput.trim()}
+              >
+                Send
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setVGuyOpen(true)}
+            className="bg-gradient-to-r from-blue-500 to-purple-500 rounded-full p-4 sm:p-5 shadow-xl flex items-center space-x-2 hover:scale-105 transition-transform"
+            aria-label="Open VGuy chatbot"
+          >
+            <Sparkles className="h-7 w-7 text-yellow-300 animate-bounce" />
+            <span className="font-bold text-lg sm:text-xl text-white">Ask VGuy</span>
+          </button>
+        )}
+      </div>
+      <style>{`
+        @media (max-width: 640px) {
+          .vguy-mobile-input {
+            font-size: 1rem;
+            padding: 0.75rem 1rem;
+          }
+        }
+      `}</style>
     </div>
   );
 };

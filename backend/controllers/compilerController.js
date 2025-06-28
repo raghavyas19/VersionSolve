@@ -2,14 +2,17 @@ const Problem = require('../models/Problem');
 const compilerService = require('../utils/compilerService');
 const { asyncHandler } = require('../middlewares/errorHandler');
 
+const MAX_TIMEOUT = 30000; // 30 seconds
+
 exports.submitCode = asyncHandler(async (req, res) => {
-  const { code, language, input } = req.body || {};
+  const { code, language, input, timeout } = req.body || {};
   
   if (!code || !language) {
     return res.status(400).json({ error: 'Code and language are required' });
   }
 
-  const result = await compilerService.executeSingleCode(code, language, input, 'online');
+  const safeTimeout = Math.min(Number(timeout) || 5000, MAX_TIMEOUT);
+  const result = await compilerService.executeSingleCode(code, language, input, 'online', safeTimeout);
 
   res.status(200).json({
     result: result.output || '',
@@ -34,19 +37,21 @@ exports.executeProblemCode = asyncHandler(async (req, res) => {
   }
 
   const testCases = problem.testCases || [];
-  const result = await compilerService.executeWithTestCases(code, language, testCases, 'problem');
+  const safeTimeout = Math.min(Number(problem.timeLimit * 1000) || 5000, MAX_TIMEOUT);
+  const result = await compilerService.executeWithTestCases(code, language, testCases, 'problem', safeTimeout);
 
   res.status(200).json(result);
 });
 
 exports.executeCustomCode = asyncHandler(async (req, res) => {
-  const { code, language, input } = req.body;
+  const { code, language, input, timeout } = req.body;
   
   if (!code || !language) {
     return res.status(400).json({ error: 'Code and language are required' });
   }
 
-  const result = await compilerService.executeSingleCode(code, language, input, 'online');
+  const safeTimeout = Math.min(Number(timeout) || 5000, MAX_TIMEOUT);
+  const result = await compilerService.executeSingleCode(code, language, input, 'online', safeTimeout);
 
   // Return result in the format expected by frontend
   const formattedResult = {

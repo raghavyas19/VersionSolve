@@ -2,11 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Code2, Mail, Lock, Eye, EyeOff, Phone } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import LoadingSpinner from '../common/LoadingSpinner';
 import { login, googleLogin } from '../../utils/api';
 
 const LoginForm: React.FC = () => {
-  const [emailOrPhone, setEmailOrPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -29,7 +28,7 @@ const LoginForm: React.FC = () => {
     setError('');
 
     try {
-      const success = await authLogin(emailOrPhone, password);
+      const success = await authLogin(email, password);
       if (success) {
       const destination = redirectPath || '/dashboard';
       setRedirectPath(null);
@@ -50,8 +49,8 @@ const LoginForm: React.FC = () => {
   };
 
   const getInputIcon = () => {
-    const isEmail = emailOrPhone.includes('@');
-    const isPhone = /^\+?[\d\s\-\(\)]+$/.test(emailOrPhone);
+    const isEmail = email.includes('@');
+    const isPhone = /^\+?[\d\s\-\(\)]+$/.test(email);
     return isEmail ? Mail : isPhone ? Phone : Mail;
   };
 
@@ -87,19 +86,19 @@ const LoginForm: React.FC = () => {
             )}
 
             <div>
-              <label htmlFor="emailOrPhone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Email or Phone Number
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Email
               </label>
               <div className="relative">
-                <InputIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
-                  id="emailOrPhone"
-                  type="text"
-                  value={emailOrPhone}
-                  onChange={(e) => setEmailOrPhone(e.target.value)}
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                  placeholder="Enter your email or phone number"
+                  placeholder="Enter your email"
                 />
               </div>
             </div>
@@ -134,14 +133,7 @@ const LoginForm: React.FC = () => {
               disabled={isLoading}
               className="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {isLoading ? (
-                <>
-                  <LoadingSpinner size="sm" className="mr-2" />
-                  Signing In...
-                </>
-              ) : (
-                'Sign In'
-              )}
+              {isLoading ? 'Signing In...' : 'Sign In'}
             </button>
 
             <div className="relative">

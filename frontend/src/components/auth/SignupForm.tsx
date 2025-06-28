@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { Code2, Mail, Lock, Eye, EyeOff, User, Phone } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, User, Phone } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import LoadingSpinner from '../common/LoadingSpinner';
-import { register, googleLogin } from '../../utils/api';
+import { register, googleLogin, verifyToken } from '../../utils/api';
 import { clearUserData } from '../../utils/memoryManager';
 
 const SignupForm: React.FC = () => {
   const [formData, setFormData] = useState({
     fullName: '',
     username: '',
-    emailOrPhone: '',
+    email: '',
     password: '',
     confirmPassword: ''
   });
@@ -63,13 +62,13 @@ const SignupForm: React.FC = () => {
       const { message, token } = await register({
         name: formData.fullName,
         username: formData.username,
-        contact: formData.emailOrPhone,
+        email: formData.email,
         password: formData.password,
         confirmPassword: formData.confirmPassword,
       });
       localStorage.setItem('token', token);
-      // Set user manually since signup is complete
-      setUser({ id: 'temp', username: formData.username, email: formData.emailOrPhone, role: 'user', rating: 0, solvedProblems: 0, submissions: 0, joinedAt: new Date() });
+      const verifyRes = await verifyToken();
+      setUser(verifyRes.user);
       clearUserData();
       const destination = redirectPath || '/dashboard';
       setRedirectPath(null);
@@ -94,8 +93,8 @@ const SignupForm: React.FC = () => {
   };
 
   const getInputIcon = () => {
-    const isEmail = formData.emailOrPhone.includes('@');
-    const isPhone = /^\+?[\d\s\-\(\)]+$/.test(formData.emailOrPhone);
+    const isEmail = formData.email.includes('@');
+    const isPhone = /^\+?[\d\s\-\(\)]+$/.test(formData.email);
     return isEmail ? Mail : isPhone ? Phone : Mail;
   };
 
@@ -169,20 +168,20 @@ const SignupForm: React.FC = () => {
             </div>
 
             <div>
-              <label htmlFor="emailOrPhone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Email or Phone Number
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Email
               </label>
               <div className="relative">
-                <InputIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
-                  id="emailOrPhone"
-                  name="emailOrPhone"
-                  type="text"
-                  value={formData.emailOrPhone}
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
                   onChange={handleInputChange}
                   required
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                  placeholder="Enter your email or phone number"
+                  placeholder="Enter your email"
                 />
               </div>
             </div>
@@ -244,14 +243,7 @@ const SignupForm: React.FC = () => {
               disabled={isLoading}
               className="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {isLoading ? (
-                <>
-                  <LoadingSpinner size="sm" className="mr-2" />
-                  Creating Account...
-                </>
-              ) : (
-                'Create Account'
-              )}
+              {isLoading ? 'Signing Up...' : 'Sign Up'}
             </button>
 
             <div className="relative">

@@ -48,19 +48,6 @@ if __name__ == "__main__":
     main()`,
     runCommand: 'python solution.py'
   },
-  javascript: {
-    name: 'JavaScript',
-    extension: 'js',
-    monacoLanguage: 'javascript',
-    template: `// Write your code here
-
-function main() {
-    
-}
-
-main();`,
-    runCommand: 'node solution.js'
-  },
   c: {
     name: 'C',
     extension: 'c',
@@ -74,32 +61,6 @@ int main() {
     return 0;
 }`,
     compileCommand: 'gcc -o solution solution.c',
-    runCommand: './solution'
-  },
-  go: {
-    name: 'Go',
-    extension: 'go',
-    monacoLanguage: 'go',
-    template: `package main
-
-import "fmt"
-
-func main() {
-    // Write your code here
-    
-}`,
-    compileCommand: 'go build -o solution solution.go',
-    runCommand: './solution'
-  },
-  rust: {
-    name: 'Rust',
-    extension: 'rs',
-    monacoLanguage: 'rust',
-    template: `fn main() {
-    // Write your code here
-    
-}`,
-    compileCommand: 'rustc -o solution solution.rs',
     runCommand: './solution'
   }
 };

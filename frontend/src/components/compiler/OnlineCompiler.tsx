@@ -22,7 +22,6 @@ import { Language, ExecutionResult, AIReview } from '../../types';
 import { LANGUAGES } from '../../utils/constants';
 import { generateAIReview } from '../../utils/codeExecution';
 import { useTheme } from '../../contexts/ThemeContext';
-import LoadingSpinner from '../common/LoadingSpinner';
 import { clsx } from 'clsx';
 import { Link } from 'react-router-dom';
 import.meta.env;
@@ -207,7 +206,7 @@ const OnlineCompiler: React.FC = () => {
               disabled={isAnalyzing}
               className="flex items-center space-x-1 px-3 py-1.5 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
             >
-              {isAnalyzing ? <LoadingSpinner size="sm" /> : <Sparkles className="h-4 w-4" />}
+              {isAnalyzing ? 'Analyzing...' : <Sparkles className="h-4 w-4" />}
               <span className="hidden sm:inline">AI Review</span>
             </button>
             
@@ -216,7 +215,7 @@ const OnlineCompiler: React.FC = () => {
               disabled={isRunning}
               className="flex items-center space-x-1 px-4 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
             >
-              {isRunning ? <LoadingSpinner size="sm" /> : <Play className="h-4 w-4" />}
+              {isRunning ? 'Running...' : <Play className="h-4 w-4" />}
               <span>Run</span>
             </button>
           </div>
@@ -384,7 +383,7 @@ const OnlineCompiler: React.FC = () => {
                 {isAnalyzing ? (
                   <div className="flex items-center justify-center py-8">
                     <div className="text-center">
-                      <LoadingSpinner size="lg" className="mx-auto mb-4" />
+                      <div className="mx-auto mb-4 text-center">Loading...</div>
                       <p className="text-gray-600 dark:text-gray-400">Analyzing your code...</p>
                     </div>
                   </div>

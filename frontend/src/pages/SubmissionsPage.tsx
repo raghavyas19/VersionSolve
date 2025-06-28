@@ -1,11 +1,64 @@
-import React from 'react';
-import { Clock, Code, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
-import { mockSubmissions, mockProblems } from '../data/mockData';
+import React, { useState, useEffect } from 'react';
+import { Clock, Code, CheckCircle2, XCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { VERDICT_COLORS } from '../utils/constants';
 import { formatDistanceToNow } from 'date-fns';
 import { clsx } from 'clsx';
+import { fetchUserSubmissions } from '../utils/api';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+
+interface Submission {
+  _id: string;
+  problem: {
+    _id: string;
+    title: string;
+    difficulty: string;
+    tags: string[];
+  };
+  language: string;
+  status: string;
+  verdict: string;
+  executionTime: number;
+  memoryUsage: number;
+  passedTests: number;
+  totalTests: number;
+  submittedAt: string;
+}
 
 const SubmissionsPage: React.FC = () => {
+  const { user } = useAuth();
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 20,
+    total: 0,
+    pages: 0
+  });
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!user) return;
+    
+    const loadSubmissions = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await fetchUserSubmissions(undefined, pagination.page, pagination.limit);
+        setSubmissions(response.submissions);
+        setPagination(response.pagination);
+      } catch (err: any) {
+        setError(err.response?.data?.message || 'Failed to load submissions');
+        console.error('Error loading submissions:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSubmissions();
+  }, [user, pagination.page, pagination.limit]);
+
   const getVerdictIcon = (status: string) => {
     switch (status) {
       case 'Accepted':
@@ -13,11 +66,44 @@ const SubmissionsPage: React.FC = () => {
       case 'Wrong Answer':
       case 'Runtime Error':
       case 'Compilation Error':
+      case 'Time Limit Exceeded':
+      case 'Memory Limit Exceeded':
         return XCircle;
       default:
         return AlertCircle;
     }
   };
+
+  if (!user) {
+    return (
+      <div className="text-center py-12">
+        <AlertCircle className="mx-auto h-12 w-12 text-gray-400" />
+        <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Please log in</h3>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          You need to be logged in to view your submissions.
+        </p>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <Loader2 className="mx-auto h-8 w-8 text-blue-500 animate-spin" />
+        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Loading submissions...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <AlertCircle className="mx-auto h-12 w-12 text-red-400" />
+        <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Error loading submissions</h3>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -54,19 +140,21 @@ const SubmissionsPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {mockSubmissions.map((submission) => {
-                const problem = mockProblems.find(p => p.id === submission.problemId);
+              {submissions.map((submission) => {
                 const VerdictIcon = getVerdictIcon(submission.status);
                 
                 return (
-                  <tr key={submission.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                  <tr key={submission._id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                     <td className="px-4 sm:px-6 py-4">
                       <div>
-                        <div className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 truncate">
-                          {problem?.title || 'Unknown Problem'}
+                        <div 
+                          className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 truncate cursor-pointer"
+                          onClick={() => navigate(`/problems/${submission.problem._id}`)}
+                        >
+                          {submission.problem.title || 'Unknown Problem'}
                         </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">
-                          #{submission.problemId} • {submission.passedTests}/{submission.totalTests} test cases
+                          {submission.passedTests}/{submission.totalTests} test cases
                         </div>
                       </div>
                     </td>
@@ -112,13 +200,41 @@ const SubmissionsPage: React.FC = () => {
         </div>
       </div>
 
-      {mockSubmissions.length === 0 && (
+      {submissions.length === 0 && (
         <div className="text-center py-12">
           <Code className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No submissions yet</h3>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Start solving problems to see your submissions here.
           </p>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {pagination.pages > 1 && (
+        <div className="mt-6 flex items-center justify-between">
+          <div className="text-sm text-gray-700 dark:text-gray-300">
+            Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} submissions
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+              disabled={pagination.page <= 1}
+              className="px-3 py-1 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Previous
+            </button>
+            <span className="px-3 py-1 text-sm text-gray-700 dark:text-gray-300">
+              Page {pagination.page} of {pagination.pages}
+            </span>
+            <button
+              onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+              disabled={pagination.page >= pagination.pages}
+              className="px-3 py-1 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Next
+            </button>
+          </div>
         </div>
       )}
     </div>

@@ -5,7 +5,6 @@ import { Problem, Language, ExecutionResult } from '../../types';
 import { LANGUAGES, DIFFICULTY_COLORS } from '../../utils/constants';
 import { compileCode, runTestCases, submitSolution, executeCustomCode } from '../../utils/codeExecution';
 import { useTheme } from '../../contexts/ThemeContext';
-import LoadingSpinner from '../common/LoadingSpinner';
 import { clsx } from 'clsx';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSidebarVisibility, useEditorVisibility } from '../common/Layout';
@@ -61,7 +60,6 @@ const ProblemCodeEditor: React.FC = () => {
   const [selectedLanguage, setSelectedLanguage] = useState<Language | null>(null);
   const [languageLoading, setLanguageLoading] = useState(true);
   const [code, setCode] = useState('');
-  const [isRunning, setIsRunning] = useState(false);
   const [testResults, setTestResults] = useState<ExecutionResult[]>([]);
   const [customInput, setCustomInput] = useState('');
   const [customOutput, setCustomOutput] = useState('');
@@ -78,6 +76,12 @@ const ProblemCodeEditor: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionVerdict, setSubmissionVerdict] = useState<string | null>(null);
   const [terminalError, setTerminalError] = useState<string | null>(null);
+  const [isCustomRunning, setIsCustomRunning] = useState(false);
+  const [isRunning, setIsRunning] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupMessage, setPopupMessage] = useState('');
+  const [popupType, setPopupType] = useState<'success' | 'error'>('success');
+  const [popupProgress, setPopupProgress] = useState(100);
 
   useEffect(() => {
     setHidden(true);
@@ -146,7 +150,7 @@ const ProblemCodeEditor: React.FC = () => {
   useEffect(() => {
     if (user && user.id && problemId) {
       const saved = localStorage.getItem(`language_preference_${user.id}_${problemId}`);
-      if (saved && ['python', 'cpp', 'c', 'java'].includes(saved)) {
+      if (saved && ['c', 'cpp', 'java', 'python'].includes(saved)) {
         setSelectedLanguage(saved as Language);
       } else {
         setSelectedLanguage('python');
@@ -163,6 +167,31 @@ const ProblemCodeEditor: React.FC = () => {
     if (user && user.id && problemId) {
       localStorage.setItem(`language_preference_${user.id}_${problemId}`, language);
     }
+  };
+
+  const showNotification = (message: string, type: 'success' | 'error') => {
+    setPopupMessage(message);
+    setPopupType(type);
+    setPopupProgress(100);
+    setShowPopup(true);
+    
+    // Animate progress bar
+    const duration = 5000; // 5 seconds
+    const interval = 50; // Update every 50ms for smooth animation
+    const steps = duration / interval;
+    const decrement = 100 / steps;
+    let currentStep = 0;
+    
+    const progressInterval = setInterval(() => {
+      currentStep++;
+      const remaining = Math.max(0, 100 - (currentStep * decrement));
+      setPopupProgress(remaining);
+      
+      if (currentStep >= steps || remaining <= 0) {
+        clearInterval(progressInterval);
+        setShowPopup(false);
+      }
+    }, interval);
   };
 
   const handleRunCode = async () => {
@@ -195,20 +224,36 @@ const ProblemCodeEditor: React.FC = () => {
     setSubmissionVerdict(null);
     setActiveTab('testcases');
     try {
+      // First, run test cases to check if all pass
       const { results, passedTests, totalTests } = await runTestCases(code, selectedLanguage!, problemId!);
       setTestResults(results);
-      // Determine status/verdict
-      let status = 'Wrong Answer';
-      if (passedTests === totalTests) status = 'Accepted';
-      else if (results.some(r => r.error && r.error.toLowerCase().includes('compil'))) status = 'Compilation Error';
-      else if (results.some(r => r.error && r.error.toLowerCase().includes('runtime'))) status = 'Runtime Error';
-      else if (results.some(r => r.error && r.error.toLowerCase().includes('time limit'))) status = 'Time Limit Exceeded';
-
-      // Use only .id for user and problem
-      const userId = user.id;
+      
+      // Check if all test cases passed
+      if (passedTests !== totalTests) {
+        // Determine why tests failed
+        let failureReason = 'Wrong Answer';
+        if (results.some(r => r.error && r.error.toLowerCase().includes('compil'))) {
+          failureReason = 'Compilation Error';
+        } else if (results.some(r => r.error && r.error.toLowerCase().includes('runtime'))) {
+          failureReason = 'Runtime Error';
+        } else if (results.some(r => r.error && r.error.toLowerCase().includes('time limit'))) {
+          failureReason = 'Time Limit Exceeded';
+        }
+        
+        setSubmissionVerdict(`${failureReason} - ${passedTests}/${totalTests} tests passed. Please fix your code before submitting.`);
+        return; // Don't submit to database
+      }
+      
+      // All tests passed, proceed with submission
+      const status = 'Accepted';
+      
+      // Use only problem ID for submission
       const problemIdForSubmission = problem.id;
-      if (!userId || !problemIdForSubmission) {
-        console.warn('User or Problem ID missing for submission');
+      
+      if (!problemIdForSubmission) {
+        console.warn('Problem ID missing for submission');
+        setSubmissionVerdict('Submission failed - missing problem ID');
+        return;
       }
 
       // Map results to backend-required structure
@@ -228,7 +273,6 @@ const ProblemCodeEditor: React.FC = () => {
 
       // Prepare submission data
       const submissionData = {
-        user: userId,
         problem: problemIdForSubmission,
         code,
         language: selectedLanguage,
@@ -240,10 +284,14 @@ const ProblemCodeEditor: React.FC = () => {
         executionTime: mappedResults.reduce((acc, r) => acc + (r.executionTime || 0), 0),
         memoryUsage: Math.max(...mappedResults.map(r => r.memoryUsage || 0)),
       };
+      
+      // Submit to database
       await submitSolution(submissionData);
-      setSubmissionVerdict(status);
+      setSubmissionVerdict('Accepted - Solution submitted successfully!');
+      showNotification('Successfully submitted!', 'success');
     } catch (error) {
-      setSubmissionVerdict('Submission failed');
+      setSubmissionVerdict('Submission failed - ' + (error instanceof Error ? error.message : 'Unknown error'));
+      showNotification('Failed to submit', 'error');
       console.error('Error submitting solution:', error);
     } finally {
       setIsSubmitting(false);
@@ -252,7 +300,7 @@ const ProblemCodeEditor: React.FC = () => {
 
   const handleCustomRun = async () => {
     if (!code.trim() || !customInput.trim() || !problem) return;
-    setIsRunning(true);
+    setIsCustomRunning(true);
     try {
       const { results } = await executeCustomCode(code, selectedLanguage!, customInput);
       if (results[0]) {
@@ -261,7 +309,7 @@ const ProblemCodeEditor: React.FC = () => {
     } catch (error) {
       setCustomOutput('Runtime Error: ' + error);
     } finally {
-      setIsRunning(false);
+      setIsCustomRunning(false);
     }
   };
 
@@ -282,7 +330,7 @@ const ProblemCodeEditor: React.FC = () => {
   };
 
   if (loading || languageLoading || !selectedLanguage) {
-    return <div className="flex items-center justify-center h-screen"><LoadingSpinner size="lg" /></div>;
+    return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
   if (error || !problem) {
     return <div className="flex items-center justify-center h-screen text-red-500">{error || 'Problem not found'}</div>;
@@ -310,6 +358,44 @@ const ProblemCodeEditor: React.FC = () => {
 
   return (
     <div className="h-screen w-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+      {/* Popup Notification */}
+      {showPopup && (
+        <div className={clsx(
+          'fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg border-2 font-semibold text-sm transition-all duration-300 min-w-[300px]',
+          popupType === 'success'
+            ? 'bg-green-500 dark:bg-green-600 border-green-600 dark:border-green-700 text-white'
+            : 'bg-red-500 dark:bg-red-600 border-red-600 dark:border-red-700 text-white'
+        )}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {popupType === 'success' ? (
+                <CheckCircle2 className="h-5 w-5 text-white" />
+              ) : (
+                <XCircle className="h-5 w-5 text-white" />
+              )}
+              <span>{popupMessage}</span>
+            </div>
+            <button 
+              onClick={() => setShowPopup(false)}
+              className="ml-4 p-1 rounded-full hover:bg-white/20 transition-colors"
+            >
+              <XCircle className="h-4 w-4 text-white" />
+            </button>
+          </div>
+          
+          {/* Animated Progress Bar */}
+          <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-black/20 rounded-b-lg overflow-hidden">
+            <div 
+              className={clsx(
+                'h-full transition-all duration-75 ease-linear',
+                popupType === 'success' ? 'bg-white' : 'bg-white'
+              )}
+              style={{ width: `${popupProgress}%` }}
+            />
+          </div>
+        </div>
+      )}
+      
       <SlimTopNavbar user={user} theme={theme} toggleTheme={toggleTheme} />
       <div className="flex-1 min-h-0">
         <Split
@@ -429,7 +515,7 @@ const ProblemCodeEditor: React.FC = () => {
                   className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   style={{ minWidth: 100 }}
                 >
-                  {['python', 'cpp', 'c', 'java'].map(key => (
+                  {['c', 'cpp', 'java', 'python'].map(key => (
                     <option key={key} value={key}>{LANGUAGES[key].name}</option>
                   ))}
                 </select>
@@ -440,15 +526,15 @@ const ProblemCodeEditor: React.FC = () => {
                   disabled={isRunning}
                   className="flex items-center space-x-2 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
                 >
-                  {isRunning ? <LoadingSpinner size="sm" /> : <Play className="h-4 w-4" />}
+                  {isRunning ? 'Running...' : <Play className="h-4 w-4" />}
                   <span>Run</span>
                 </button>
                 <button
                   onClick={handleSubmit}
-                  disabled={isSubmitting || isRunning}
+                  disabled={isSubmitting}
                   className="flex items-center space-x-2 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isSubmitting ? <LoadingSpinner size="sm" /> : <Save className="h-4 w-4" />}
+                  {isSubmitting ? 'Submitting...' : <Save className="h-4 w-4" />}
                   <span>Submit</span>
                 </button>
               </div>
@@ -561,6 +647,16 @@ const ProblemCodeEditor: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <Terminal className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Result & Test Cases</span>
+                    {submissionVerdict && (
+                      <span className={clsx(
+                        'ml-2 px-2 py-1 rounded text-xs font-semibold',
+                        submissionVerdict.includes('Accepted') || submissionVerdict.includes('successfully')
+                          ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-300 dark:border-green-600'
+                          : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-600'
+                      )}>
+                        {submissionVerdict.includes('Accepted') || submissionVerdict.includes('successfully') ? 'Successfully submitted' : 'Failed to submit'}
+                      </span>
+                    )}
                   </div>
                   <button onClick={() => { setBottomCollapsed(true); setTerminalHeight(MIN_TERMINAL_PX); }} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
                     <XCircle className="h-4 w-4 text-gray-600 dark:text-gray-400" />
@@ -727,10 +823,10 @@ const ProblemCodeEditor: React.FC = () => {
                       )}
                       <button
                         onClick={handleCustomRun}
-                        disabled={isRunning}
+                        disabled={isCustomRunning}
                         className="mt-2 w-fit px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm"
                       >
-                        {isRunning ? <LoadingSpinner size="sm" /> : 'Run'}
+                        {isCustomRunning ? 'Running...' : 'Run'}
                       </button>
                     </div>
                   )}
@@ -744,13 +840,6 @@ const ProblemCodeEditor: React.FC = () => {
                   <Terminal className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Result & Test Cases</span>
                 </div>
-              </div>
-            )}
-            {submissionVerdict && (
-              <div className={clsx('mt-2 text-sm font-semibold',
-                submissionVerdict === 'Accepted' ? 'text-green-600' : 'text-red-500')}
-              >
-                {submissionVerdict}
               </div>
             )}
           </div>

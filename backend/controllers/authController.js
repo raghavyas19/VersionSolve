@@ -7,9 +7,9 @@ const { asyncHandler } = require('../middlewares/errorHandler');
 const secretKey = process.env.JWT_SECRET || 'your-secret-key';
 
 exports.register = asyncHandler(async (req, res) => {
-  const { name, username, contact, password, confirmPassword } = req.body;
+  const { name, username, email, password, confirmPassword } = req.body;
   
-  if (!name || !username || !contact || !password || !confirmPassword) {
+  if (!name || !username || !email || !password || !confirmPassword) {
     return res.status(400).json({ error: 'All fields are required' });
   }
   
@@ -17,13 +17,13 @@ exports.register = asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'Passwords do not match' });
   }
 
-  const existingUser = await User.findOne({ $or: [{ contact }, { username }] });
+  const existingUser = await User.findOne({ $or: [{ email }, { username }] });
   if (existingUser) {
-    return res.status(400).json({ error: 'Username or contact already exists' });
+    return res.status(400).json({ error: 'Username or email already exists' });
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
-  const user = new User({ name, username, contact, password: hashedPassword });
+  const user = new User({ name, username, email, password: hashedPassword });
   await user.save();
 
   const token = jwt.sign({ id: user._id, username: user.username }, secretKey, { expiresIn: '1h' });
@@ -37,8 +37,8 @@ exports.login = asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'Username/email and password are required' });
   }
 
-  // Try to find user by email (contact) first, then by username
-  let user = await User.findOne({ contact: username });
+  // Try to find user by email first, then by username
+  let user = await User.findOne({ email: username });
   if (!user) {
     user = await User.findOne({ username: username });
   }
@@ -59,8 +59,12 @@ exports.login = asyncHandler(async (req, res) => {
     user: {
       id: user._id,
       username: user.username,
-      email: user.contact,
-      name: user.name
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      isActive: user.isActive,
+      lastLogin: user.lastLogin,
+      createdAt: user.createdAt
     }
   });
 });
@@ -99,7 +103,7 @@ exports.verify = asyncHandler(async (req, res) => {
     user: {
       id: req.user._id,
       username: req.user.username,
-      email: req.user.contact,
+      email: req.user.email,
       name: req.user.name,
       role: req.user.role,
       isActive: req.user.isActive,

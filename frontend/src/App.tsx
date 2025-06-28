@@ -13,11 +13,13 @@ import ProblemDetail from './components/problems/ProblemDetail';
 import SubmissionsPage from './pages/SubmissionsPage';
 import ContestsPage from './pages/ContestsPage';
 import LeaderboardPage from './pages/LeaderboardPage';
+import AdminAuthForm from './components/admin/AdminAuthForm';
 import AdminDashboard from './components/admin/AdminDashboard';
 import ProblemManager from './components/admin/ProblemManager';
-import LoadingSpinner from './components/common/LoadingSpinner';
-import ProblemCodeEditor from './components/editor/ProblemCodeEditor';
+import ProblemCodeEditor from './components/problems/ProblemCodeEditor';
 import { clearUserData, handleReload, initializeMemoryManagement } from './utils/memoryManager';
+import { adminVerify } from './utils/api';
+import AdminLayout from './components/common/AdminLayout';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useAuth();
@@ -25,7 +27,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" />
+        <div>Loading...</div>
       </div>
     );
   }
@@ -76,9 +78,25 @@ const AuthHandler: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <LoadingSpinner size="lg" />
+      <div>Loading...</div>
     </div>
   );
+};
+
+const AdminProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const navigate = useNavigate();
+  useEffect(() => {
+    const checkAdmin = async () => {
+      try {
+        await adminVerify();
+      } catch {
+        navigate('/admin/auth', { replace: true });
+      }
+    };
+    checkAdmin();
+  }, [navigate]);
+  // Always render children, as /admin/verify will redirect if not authenticated
+  return <>{children}</>;
 };
 
 const AppRoutes: React.FC = () => {
@@ -87,7 +105,7 @@ const AppRoutes: React.FC = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" />
+        <div>Loading...</div>
       </div>
     );
   }
@@ -98,26 +116,26 @@ const AppRoutes: React.FC = () => {
       <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <LoginForm />} />
       <Route path="/signup" element={user ? <Navigate to="/dashboard" replace /> : <SignupForm />} />
       <Route path="/compiler" element={<OnlineCompiler />} />
-      {/* Landing page always accessible */}
+      {/* Landing page only for root */}
       <Route path="/" element={<LandingPage />} />
       {/* Main app routes with Layout */}
-      <Route path="/" element={<Layout />}> 
-        {/* Dashboard only for authenticated users, with AuthHandler for Google OAuth */}
+      <Route path="/*" element={<Layout />}> 
         <Route path="dashboard" element={
           window.location.search.includes('token=') ? <AuthHandler /> :
           <ProtectedRoute>
             <Dashboard />
           </ProtectedRoute>
-        } />
-        {/* Dashboard subroutes */}
-        <Route path="dashboard/problems" element={<ProblemsPage />} />
-        <Route path="dashboard/leaderboard" element={<LeaderboardPage />} />
-        <Route path="dashboard/contests" element={<ContestsPage />} />
-        <Route path="dashboard/mysubmissions" element={
-          <ProtectedRoute>
-            <SubmissionsPage />
-          </ProtectedRoute>
-        } />
+        }>
+          {/* Nested dashboard routes */}
+          <Route path="problems" element={<ProblemsPage />} />
+          <Route path="leaderboard" element={<LeaderboardPage />} />
+          <Route path="contests" element={<ContestsPage />} />
+          <Route path="mysubmissions" element={
+            <ProtectedRoute>
+              <SubmissionsPage />
+            </ProtectedRoute>
+          } />
+        </Route>
         {/* Public pages accessible to guests */}
         <Route path="problems" element={<ProblemsPage />} />
         <Route path="problems/:id" element={<ProblemDetail />} />
@@ -129,14 +147,14 @@ const AppRoutes: React.FC = () => {
             <SubmissionsPage />
           </ProtectedRoute>
         } />
-        {/* Admin routes */}
-        <Route path="admin" element={
-          <AdminDashboard />
-        } />
-        <Route path="admin/problems" element={
-          <ProblemManager />
-        } />
         <Route path="problems/solve/:problemId" element={<ProblemCodeEditor />} />
+      </Route>
+      {/* Admin routes with AdminLayout */}
+      <Route path="/admin/auth" element={<AdminAuthForm />} />
+      <Route path="/admin" element={<AdminLayout />}>
+        <Route index element={<AdminDashboard />} />
+        <Route path="problems" element={<ProblemManager />} />
+        {/* Add more admin routes here as needed */}
       </Route>
       {/* Redirect unknown routes */}
       <Route path="*" element={<Navigate to="/" replace />} />

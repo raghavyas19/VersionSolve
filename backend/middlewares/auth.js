@@ -1,12 +1,16 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const Admin = require('../models/Admin');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 // JWT Authentication Middleware
 const authenticateJWT = async (req, res, next) => {
   try {
-    const token = req.headers['authorization']?.split(' ')[1];
+    let token = req.headers['authorization']?.split(' ')[1];
+    if (!token && req.cookies) {
+      token = req.cookies.token;
+    }
     
     if (!token) {
       return res.status(401).json({ 
@@ -16,15 +20,17 @@ const authenticateJWT = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, JWT_SECRET);
-    const user = await User.findById(decoded.id).select('-password');
-    
+    let user = await User.findById(decoded.id).select('-password');
+    if (!user) {
+      // Try admin
+      user = await Admin.findById(decoded.id).select('-password');
+    }
     if (!user) {
       return res.status(401).json({ 
         success: false, 
-        error: 'Invalid token - user not found' 
+        error: 'Invalid token - user/admin not found' 
       });
     }
-
     req.user = user;
     next();
   } catch (error) {

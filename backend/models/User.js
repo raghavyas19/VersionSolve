@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
-  contact: { type: String, required: true, unique: true }, // For email or phone number
+  email: { type: String, required: true, unique: true }, // User email
   password: { type: String },
   googleId: { type: String },
   name: { type: String, required: true },

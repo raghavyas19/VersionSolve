@@ -14,4 +14,7 @@ router.post('/', codeExecutionLimiter, validateSubmission, submissionController.
 // Get submissions for a user/problem
 router.get('/', validatePagination, submissionController.getSubmissions);
 
+// Get user stats (solved problems and submissions)
+router.get('/stats', submissionController.getUserStats);
+
 module.exports = router; 

@@ -5,7 +5,7 @@ import { clearUserData, handleReload, initializeMemoryManagement } from '../util
 
 interface AuthContextType {
   user: User | null;
-  login: (contact: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
   redirectPath: string | null;
@@ -62,9 +62,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const login = async (contact: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const response = await api.post('/auth/login', { username: contact, password });
+      const response = await api.post('/auth/login', { username: email, password });
       const { token } = response.data;
       localStorage.setItem('token', token);
       const verifyResponse = await api.get('/auth/verify');

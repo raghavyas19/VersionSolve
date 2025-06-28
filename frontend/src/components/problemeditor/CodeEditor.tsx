@@ -5,7 +5,6 @@ import { Problem, Language, ExecutionResult } from '../../types';
 import { LANGUAGES } from '../../utils/constants';
 import { compileCode, runTestCases } from '../../utils/codeExecution';
 import { useTheme } from '../../contexts/ThemeContext';
-import LoadingSpinner from '../common/LoadingSpinner';
 import { clsx } from 'clsx';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSidebarVisibility, useEditorVisibility } from '../common/Layout';
@@ -177,7 +176,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ problem, onBack }) => {
             className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             style={{ minWidth: 100 }}
           >
-            {Object.entries(LANGUAGES).map(([key, lang]) => (
+            {Object.entries(LANGUAGES).filter(([key]) => ['c', 'cpp', 'java', 'python'].includes(key)).map(([key, lang]) => (
               <option key={key} value={key}>{lang.name}</option>
             ))}
           </select>
@@ -186,7 +185,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ problem, onBack }) => {
             disabled={isRunning}
             className="flex items-center space-x-2 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
           >
-            {isRunning ? <LoadingSpinner size="sm" /> : <Play className="h-4 w-4" />}
+            {isRunning ? <Play className="h-4 w-4" /> : <Play className="h-4 w-4" />}
             <span>Run</span>
           </button>
           <button className="flex items-center space-x-2 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm">
@@ -397,7 +396,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ problem, onBack }) => {
                         disabled={isRunning}
                         className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
-                        {isRunning ? <LoadingSpinner size="sm" /> : <Terminal className="h-4 w-4" />}
+                        {isRunning ? <Terminal className="h-4 w-4" /> : <Terminal className="h-4 w-4" />}
                         <span>Run</span>
                       </button>
                       <div>

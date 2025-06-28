@@ -126,9 +126,16 @@ export const runTestCases = async (
   language: Language,
   problemId: string
 ): Promise<{ results: ExecutionResult[]; passedTests: number; totalTests: number }> => {
+  const token = localStorage.getItem('token');
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/problem/execute`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({ code, language, problemId }),
   });
   if (!response.ok) throw new Error('Code execution failed');
@@ -136,9 +143,16 @@ export const runTestCases = async (
 };
 
 export const submitSolution = async (submissionData: any) => {
+  const token = localStorage.getItem('token');
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/submission`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify(submissionData),
   });
   if (!response.ok) throw new Error('Submission failed');
@@ -146,9 +160,16 @@ export const submitSolution = async (submissionData: any) => {
 };
 
 export const generateAIReview = async (code: string, language: Language): Promise<AIReview> => {
+  const token = localStorage.getItem('token');
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/ai/review`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({ code }),
   });
   if (!response.ok) throw new Error('AI review failed');
@@ -195,9 +216,16 @@ export const executeCustomCode = async (
   language: Language,
   input: string
 ): Promise<{ results: ExecutionResult[]; passedTests: number; totalTests: number }> => {
+  const token = localStorage.getItem('token');
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/problem/execute-custom`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({ code, language, input }),
   });
   if (!response.ok) throw new Error('Code execution failed');

@@ -17,7 +17,8 @@ import { Problem, TestCase } from '../../types';
 // import { mockProblems } from '../../data/mockData';
 import { DIFFICULTY_COLORS } from '../../utils/constants';
 import { clsx } from 'clsx';
-import { fetchProblems, createProblem } from '../../utils/api';
+import { fetchProblems, createProblem, adminVerify, getAdminCsrfToken } from '../../utils/api';
+import { useNavigate } from 'react-router-dom';
 
 const ProblemManager: React.FC = () => {
   const [problems, setProblems] = useState<Problem[]>([]);
@@ -28,6 +29,9 @@ const ProblemManager: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [admin, setAdmin] = useState<any>(null);
+  const [csrfToken, setCsrfToken] = useState<string>('');
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     title: '',
@@ -41,6 +45,20 @@ const ProblemManager: React.FC = () => {
     examples: [{ input: '', output: '', explanation: '' }],
     testCases: [{ input: '', expectedOutput: '', isHidden: false, points: 10 }]
   });
+
+  useEffect(() => {
+    const fetchAdmin = async () => {
+      try {
+        const res = await adminVerify();
+        setAdmin(res.admin);
+      } catch {
+        localStorage.removeItem('token');
+        navigate('/admin/auth', { replace: true });
+      }
+    };
+    fetchAdmin();
+    getAdminCsrfToken().then(setCsrfToken);
+  }, [navigate]);
 
   useEffect(() => {
     const loadProblems = async () => {
@@ -83,7 +101,7 @@ const ProblemManager: React.FC = () => {
         author: 'admin',
         // createdAt will be set by backend
       };
-      const { problem } = await createProblem(newProblem);
+      const { problem } = await createProblem(newProblem, csrfToken);
       setProblems(editingProblem
         ? problems.map(p => p.id === editingProblem.id ? problem : p)
         : [...problems, problem]
@@ -442,8 +460,9 @@ const ProblemManager: React.FC = () => {
                     onChange={(e) => setFormData({ ...formData, timeLimit: Number(e.target.value) })}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     min="1"
-                    max="10"
+                    max="30"
                   />
+                  <p className="text-xs text-gray-500 mt-1">Max allowed: 30 seconds</p>
                 </div>
 
                 <div>
@@ -458,6 +477,7 @@ const ProblemManager: React.FC = () => {
                     min="64"
                     max="1024"
                   />
+                  <p className="text-xs text-gray-500 mt-1">Max allowed: 1024 MB</p>
                 </div>
 
                 <div>
