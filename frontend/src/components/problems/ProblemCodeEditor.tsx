@@ -71,6 +71,7 @@ const ProblemCodeEditor: React.FC = () => {
   const { setEditorOpen } = useEditorVisibility();
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [splitSize, setSplitSize] = useState(480);
+  const prevTerminalHeight = useRef(220);
   const [terminalHeight, setTerminalHeight] = useState(220);
   const [bottomCollapsed, setBottomCollapsed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -329,6 +330,18 @@ const ProblemCodeEditor: React.FC = () => {
     return null;
   };
 
+  // When collapsing, store the current height
+  const handleCollapseTerminal = () => {
+    prevTerminalHeight.current = terminalHeight;
+    setBottomCollapsed(true);
+    setTerminalHeight(MIN_TERMINAL_PX);
+  };
+  // When expanding, restore the previous height
+  const handleExpandTerminal = () => {
+    setBottomCollapsed(false);
+    setTerminalHeight(prevTerminalHeight.current || 220);
+  };
+
   if (loading || languageLoading || !selectedLanguage) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
@@ -357,7 +370,7 @@ const ProblemCodeEditor: React.FC = () => {
   });
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+    <div className="fixed inset-0 h-screen w-screen flex flex-col bg-gray-50 dark:bg-gray-900 z-50" style={{padding:0, margin:0}}>
       {/* Popup Notification */}
       {showPopup && (
         <div className={clsx(
@@ -640,208 +653,216 @@ const ProblemCodeEditor: React.FC = () => {
                 />
               </div>
               {/* Terminal Section */}
-              <div className={clsx('bg-white dark:bg-gray-800 border-t-2 border-gray-300 dark:border-[#222a35]', bottomCollapsed ? 'hidden' : '')} style={{ minHeight: MIN_TERMINAL_PX, maxHeight: Math.min(MAX_TERMINAL_HEIGHT, window.innerHeight - TOP_NAVBAR_HEIGHT - EDITOR_NAVBAR_HEIGHT - 60), height: '100%', overflow: 'auto' }}>
-                <div className={clsx("flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-600",
-                  theme === 'dark' ? 'bg-gray-800' : 'bg-gray-200')}
+              {bottomCollapsed ? (
+                <div
+                  className={clsx(
+                    'flex items-center justify-between px-4 py-2 border-t-2 border-gray-300 dark:border-[#222a35] cursor-pointer',
+                    theme === 'dark' ? 'bg-gray-800' : 'bg-gray-200'
+                  )}
+                  style={{ minHeight: MIN_TERMINAL_PX, maxHeight: MIN_TERMINAL_PX, height: MIN_TERMINAL_PX, position: 'relative' }}
+                  onClick={handleExpandTerminal}
+                  title="Show Result & Test Cases"
                 >
                   <div className="flex items-center gap-2">
                     <Terminal className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Result & Test Cases</span>
-                    {submissionVerdict && (
-                      <span className={clsx(
-                        'ml-2 px-2 py-1 rounded text-xs font-semibold',
-                        submissionVerdict.includes('Accepted') || submissionVerdict.includes('successfully')
-                          ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-300 dark:border-green-600'
-                          : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-600'
-                      )}>
-                        {submissionVerdict.includes('Accepted') || submissionVerdict.includes('successfully') ? 'Successfully submitted' : 'Failed to submit'}
-                      </span>
-                    )}
                   </div>
-                  <button onClick={() => { setBottomCollapsed(true); setTerminalHeight(MIN_TERMINAL_PX); }} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-                    <XCircle className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                  </button>
                 </div>
-                <div className="px-4 py-2">
-                  <div className="flex gap-2 mb-2">
-                    <button
-                      className={clsx('px-3 py-1 rounded text-sm font-medium', activeTab === 'testcases' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200')}
-                      onClick={() => setActiveTab('testcases')}
-                    >
-                      Test Cases
-                    </button>
-                    <button
-                      className={clsx('px-3 py-1 rounded text-sm font-medium', activeTab === 'result' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200')}
-                      onClick={() => setActiveTab('result')}
-                    >
-                      Results
-                    </button>
-                    <button
-                      className={clsx('px-3 py-1 rounded text-sm font-medium', activeTab === 'custom' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200')}
-                      onClick={() => setActiveTab('custom')}
-                    >
-                      Custom Input
+              ) : (
+                <div className={clsx('bg-white dark:bg-gray-800 border-t-2 border-gray-300 dark:border-[#222a35]', bottomCollapsed ? 'hidden' : '')} style={{ minHeight: MIN_TERMINAL_PX, maxHeight: Math.min(MAX_TERMINAL_HEIGHT, window.innerHeight - TOP_NAVBAR_HEIGHT - EDITOR_NAVBAR_HEIGHT - 60), height: '100%', overflow: 'auto' }}>
+                  <div className={clsx("flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-600",
+                    theme === 'dark' ? 'bg-gray-800' : 'bg-gray-200')}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Terminal className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Result & Test Cases</span>
+                      {submissionVerdict && (
+                        <span className={clsx(
+                          'ml-2 px-2 py-1 rounded text-xs font-semibold',
+                          submissionVerdict.includes('Accepted') || submissionVerdict.includes('successfully')
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-300 dark:border-green-600'
+                            : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-600'
+                        )}>
+                          {submissionVerdict.includes('Accepted') || submissionVerdict.includes('successfully') ? 'Successfully submitted' : 'Failed to submit'}
+                        </span>
+                      )}
+                    </div>
+                    <button onClick={handleCollapseTerminal} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                      <XCircle className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                     </button>
                   </div>
-                  {activeTab === 'testcases' && problem && (
-                    <div>
-                      {problem.testCases.map((test, idx) => (
-                        <div key={test.id} className="mb-2 flex flex-row items-stretch gap-2">
-                          {/* Test Case Info */}
-                          <div className="w-1/3 min-w-[180px] max-w-[220px] p-2 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600 flex flex-col justify-between">
-                            <div className="flex items-center gap-2 mb-1">
-                              {testResults[idx] ? (
-                                testResults[idx].success ? (
-                                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  <div className="px-4 py-2">
+                    <div className="flex gap-2 mb-2">
+                      <button
+                        className={clsx('px-3 py-1 rounded text-sm font-medium', activeTab === 'testcases' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200')}
+                        onClick={() => setActiveTab('testcases')}
+                      >
+                        Test Cases
+                      </button>
+                      <button
+                        className={clsx('px-3 py-1 rounded text-sm font-medium', activeTab === 'result' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200')}
+                        onClick={() => setActiveTab('result')}
+                      >
+                        Results
+                      </button>
+                      <button
+                        className={clsx('px-3 py-1 rounded text-sm font-medium', activeTab === 'custom' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200')}
+                        onClick={() => setActiveTab('custom')}
+                      >
+                        Custom Input
+                      </button>
+                    </div>
+                    {activeTab === 'testcases' && problem && (
+                      <div>
+                        {problem.testCases.map((test, idx) => (
+                          <div key={test.id} className="mb-2 flex flex-row items-stretch gap-2">
+                            {/* Test Case Info */}
+                            <div className="w-1/3 min-w-[180px] max-w-[220px] p-2 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600 flex flex-col justify-between">
+                              <div className="flex items-center gap-2 mb-1">
+                                {testResults[idx] ? (
+                                  testResults[idx].success ? (
+                                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                  ) : (
+                                    <XCircle className="h-4 w-4 text-red-500" />
+                                  )
                                 ) : (
-                                  <XCircle className="h-4 w-4 text-red-500" />
-                                )
-                              ) : (
-                                test.isHidden ? <Clock className="h-4 w-4 text-yellow-400" /> : null
+                                  test.isHidden ? <Clock className="h-4 w-4 text-yellow-400" /> : null
+                                )}
+                                <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">Test Case {idx + 1}</span>
+                              </div>
+                              <div className="text-xs text-gray-600 dark:text-gray-400">
+                                <strong>Input:</strong> <pre className="inline whitespace-pre-wrap">{test.input}</pre>
+                              </div>
+                              <div className="text-xs text-gray-600 dark:text-gray-400">
+                                <strong>Expected Output:</strong> <pre className="inline whitespace-pre-wrap">{test.expectedOutput}</pre>
+                              </div>
+                            </div>
+                            {/* User Output & Error */}
+                            <div className="flex-1 p-2 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 flex flex-col justify-between">
+                              <div className="text-xs text-gray-700 dark:text-gray-200">
+                                <strong>Your Output:</strong>
+                                <pre className="whitespace-pre-wrap break-all">{testResults[idx]?.output ?? ''}</pre>
+                              </div>
+                              {testResults[idx]?.error && (
+                                <div className="mt-1 text-xs text-red-600 dark:text-red-400">
+                                  <strong>Error:</strong> <pre className="inline whitespace-pre-wrap">{testResults[idx].error}</pre>
+                                </div>
                               )}
-                              <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">Test Case {idx + 1}</span>
-                            </div>
-                            <div className="text-xs text-gray-600 dark:text-gray-400">
-                              <strong>Input:</strong> <pre className="inline whitespace-pre-wrap">{test.input}</pre>
-                            </div>
-                            <div className="text-xs text-gray-600 dark:text-gray-400">
-                              <strong>Expected Output:</strong> <pre className="inline whitespace-pre-wrap">{test.expectedOutput}</pre>
                             </div>
                           </div>
-                          {/* User Output & Error */}
-                          <div className="flex-1 p-2 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 flex flex-col justify-between">
-                            <div className="text-xs text-gray-700 dark:text-gray-200">
-                              <strong>Your Output:</strong>
-                              <pre className="whitespace-pre-wrap break-all">{testResults[idx]?.output ?? ''}</pre>
-                            </div>
-                            {testResults[idx]?.error && (
-                              <div className="mt-1 text-xs text-red-600 dark:text-red-400">
-                                <strong>Error:</strong> <pre className="inline whitespace-pre-wrap">{testResults[idx].error}</pre>
+                        ))}
+                        {totalTests > 0 && (
+                          <div className="mt-2 text-xs text-gray-700 dark:text-gray-200">
+                            Passed {passedTests} / {totalTests} test cases
+                          </div>
+                        )}
+                        {/* Test Results Status */}
+                        {totalTests > 0 && testResults.length > 0 && (
+                          <div className="mt-2 p-2 bg-gray-100 dark:bg-gray-700 rounded">
+                            <div className="flex items-center gap-4 text-sm">
+                              <div className={clsx('font-semibold', passedTests === totalTests ? 'text-green-600' : 'text-red-500')}>
+                                {passedTests === totalTests ? 'All Tests Passed' : `${passedTests}/${totalTests} Tests Passed`}
                               </div>
+                              {testResults.some(r => r.executionTime !== undefined) && (
+                                <div className="text-xs text-gray-600 dark:text-gray-400">
+                                  Avg Time: {Math.round(testResults.reduce((acc, r) => acc + (r.executionTime || 0), 0) / testResults.length)}ms
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        {/* Terminal Error Display */}
+                        {terminalError && (
+                          <div className="mt-3 p-3 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 rounded text-red-700 dark:text-red-300 text-xs whitespace-pre-wrap">
+                            <strong>Terminal Error:</strong>
+                            {terminalError.trim() === 'Execution error' ? (
+                              <div>
+                                <pre className="whitespace-pre-wrap break-all">Internal server error or unknown backend error. Please check your code or contact support.</pre>
+                              </div>
+                            ) : (
+                              <pre className="whitespace-pre-wrap break-all">{terminalError}</pre>
                             )}
                           </div>
+                        )}
+                        {getSummaryError(testResults) && (
+                          <div className="mb-3 p-3 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 rounded text-red-700 dark:text-red-300 text-xs whitespace-pre-wrap">
+                            <strong>Error:</strong>
+                            <pre className="whitespace-pre-wrap break-all">{getSummaryError(testResults)}</pre>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {activeTab === 'result' && (
+                      <div>
+                        {testResults.length === 0 ? (
+                          <div className="text-xs text-gray-500 dark:text-gray-400">No results yet. Run your code to see results.</div>
+                        ) : (
+                          testResults.map((result, idx) => (
+                            <div key={idx} className={clsx('mb-2 p-2 rounded', result.success ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20')}>
+                              <div className="flex flex-col md:flex-row md:items-center gap-2">
+                                <span className={clsx('font-semibold', result.success ? 'text-green-600' : 'text-red-500')}>{result.success ? 'Passed' : 'Failed'}</span>
+                                <span className="text-xs text-gray-700 dark:text-gray-200">Execution Time: {result.executionTime !== undefined ? result.executionTime + ' ms' : 'N/A'}</span>
+                                <span className="text-xs text-gray-700 dark:text-gray-200">Memory: {result.memoryUsage !== undefined ? result.memoryUsage + ' MB' : 'N/A'}</span>
+                              </div>
+                              {result.error && (
+                                <div className="mt-1 text-xs text-red-600 dark:text-red-400">
+                                  <strong>Error:</strong> <pre className="inline whitespace-pre-wrap">{result.error}</pre>
+                                </div>
+                              )}
+                              {result.output && !result.success && (
+                                <div className="mt-1 text-xs text-gray-700 dark:text-gray-200">
+                                  <strong>Your Output:</strong> <pre className="inline whitespace-pre-wrap">{result.output}</pre>
+                                </div>
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                    {activeTab === 'custom' && (
+                      <div className="flex flex-col gap-2">
+                        <div className="flex flex-row gap-2 items-start">
+                          {/* Input Box (reduced width, colored border) */}
+                          <textarea
+                            value={customInput}
+                            onChange={(e) => setCustomInput(e.target.value)}
+                            className="w-1/2 min-w-[180px] max-w-[320px] h-20 rounded p-2 bg-white dark:bg-gray-800 border-2 border-blue-500 dark:border-blue-400"
+                            placeholder="Enter custom input"
+                          />
+                          {/* Output Box beside input */}
+                          <div className="flex-1 p-2 bg-gray-50 rounded-lg dark:bg-gray-800 border border-gray-200 dark:border-gray-700 min-h-[80px]">
+                            <strong>Output:</strong>
+                            <pre className="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-200">{customOutput}</pre>
+                          </div>
                         </div>
-                      ))}
-                      {totalTests > 0 && (
-                        <div className="mt-2 text-xs text-gray-700 dark:text-gray-200">
-                          Passed {passedTests} / {totalTests} test cases
-                        </div>
-                      )}
-                      {/* Test Results Status */}
-                      {totalTests > 0 && testResults.length > 0 && (
-                        <div className="mt-2 p-2 bg-gray-100 dark:bg-gray-700 rounded">
+                        {/* Test Results Status */}
+                        {totalTests > 0 && (
                           <div className="flex items-center gap-4 text-sm">
                             <div className={clsx('font-semibold', passedTests === totalTests ? 'text-green-600' : 'text-red-500')}>
                               {passedTests === totalTests ? 'All Tests Passed' : `${passedTests}/${totalTests} Tests Passed`}
                             </div>
-                            {testResults.some(r => r.executionTime !== undefined) && (
+                            {testResults.length > 0 && (
                               <div className="text-xs text-gray-600 dark:text-gray-400">
-                                Avg Time: {Math.round(testResults.reduce((acc, r) => acc + (r.executionTime || 0), 0) / testResults.length)}ms
+                                {testResults.some(r => r.executionTime !== undefined) && (
+                                  <span>Avg Time: {Math.round(testResults.reduce((acc, r) => acc + (r.executionTime || 0), 0) / testResults.length)}ms</span>
+                                )}
                               </div>
                             )}
                           </div>
-                        </div>
-                      )}
-                      {/* Terminal Error Display */}
-                      {terminalError && (
-                        <div className="mt-3 p-3 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 rounded text-red-700 dark:text-red-300 text-xs whitespace-pre-wrap">
-                          <strong>Terminal Error:</strong>
-                          {terminalError.trim() === 'Execution error' ? (
-                            <div>
-                              <pre className="whitespace-pre-wrap break-all">Internal server error or unknown backend error. Please check your code or contact support.</pre>
-                            </div>
-                          ) : (
-                            <pre className="whitespace-pre-wrap break-all">{terminalError}</pre>
-                          )}
-                        </div>
-                      )}
-                      {getSummaryError(testResults) && (
-                        <div className="mb-3 p-3 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 rounded text-red-700 dark:text-red-300 text-xs whitespace-pre-wrap">
-                          <strong>Error:</strong>
-                          <pre className="whitespace-pre-wrap break-all">{getSummaryError(testResults)}</pre>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  {activeTab === 'result' && (
-                    <div>
-                      {testResults.length === 0 ? (
-                        <div className="text-xs text-gray-500 dark:text-gray-400">No results yet. Run your code to see results.</div>
-                      ) : (
-                        testResults.map((result, idx) => (
-                          <div key={idx} className={clsx('mb-2 p-2 rounded', result.success ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20')}>
-                            <div className="flex flex-col md:flex-row md:items-center gap-2">
-                              <span className={clsx('font-semibold', result.success ? 'text-green-600' : 'text-red-500')}>{result.success ? 'Passed' : 'Failed'}</span>
-                              <span className="text-xs text-gray-700 dark:text-gray-200">Execution Time: {result.executionTime !== undefined ? result.executionTime + ' ms' : 'N/A'}</span>
-                              <span className="text-xs text-gray-700 dark:text-gray-200">Memory: {result.memoryUsage !== undefined ? result.memoryUsage + ' MB' : 'N/A'}</span>
-                            </div>
-                            {result.error && (
-                              <div className="mt-1 text-xs text-red-600 dark:text-red-400">
-                                <strong>Error:</strong> <pre className="inline whitespace-pre-wrap">{result.error}</pre>
-                              </div>
-                            )}
-                            {result.output && !result.success && (
-                              <div className="mt-1 text-xs text-gray-700 dark:text-gray-200">
-                                <strong>Your Output:</strong> <pre className="inline whitespace-pre-wrap">{result.output}</pre>
-                              </div>
-                            )}
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  )}
-                  {activeTab === 'custom' && (
-                    <div className="flex flex-col gap-2">
-                      <div className="flex flex-row gap-2 items-start">
-                        {/* Input Box (reduced width, colored border) */}
-                        <textarea
-                          value={customInput}
-                          onChange={(e) => setCustomInput(e.target.value)}
-                          className="w-1/2 min-w-[180px] max-w-[320px] h-20 rounded p-2 bg-white dark:bg-gray-800 border-2 border-blue-500 dark:border-blue-400"
-                          placeholder="Enter custom input"
-                        />
-                        {/* Output Box beside input */}
-                        <div className="flex-1 p-2 bg-gray-50 rounded-lg dark:bg-gray-800 border border-gray-200 dark:border-gray-700 min-h-[80px]">
-                          <strong>Output:</strong>
-                          <pre className="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-200">{customOutput}</pre>
-                        </div>
+                        )}
+                        <button
+                          onClick={handleCustomRun}
+                          disabled={isCustomRunning}
+                          className="mt-2 w-fit px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm"
+                        >
+                          {isCustomRunning ? 'Running...' : 'Run'}
+                        </button>
                       </div>
-                      {/* Test Results Status */}
-                      {totalTests > 0 && (
-                        <div className="flex items-center gap-4 text-sm">
-                          <div className={clsx('font-semibold', passedTests === totalTests ? 'text-green-600' : 'text-red-500')}>
-                            {passedTests === totalTests ? 'All Tests Passed' : `${passedTests}/${totalTests} Tests Passed`}
-                          </div>
-                          {testResults.length > 0 && (
-                            <div className="text-xs text-gray-600 dark:text-gray-400">
-                              {testResults.some(r => r.executionTime !== undefined) && (
-                                <span>Avg Time: {Math.round(testResults.reduce((acc, r) => acc + (r.executionTime || 0), 0) / testResults.length)}ms</span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      <button
-                        onClick={handleCustomRun}
-                        disabled={isCustomRunning}
-                        className="mt-2 w-fit px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm"
-                      >
-                        {isCustomRunning ? 'Running...' : 'Run'}
-                      </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </Split>
-            {/* Sticky terminal header when collapsed */}
-            {bottomCollapsed && (
-              <div className="absolute bottom-0 left-0 right-0 z-10 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-600 py-2 px-4 flex items-center justify-between cursor-pointer" onClick={() => { setBottomCollapsed(false); setTerminalHeight(220); }}>
-                <div className="flex items-center gap-2">
-                  <Terminal className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Result & Test Cases</span>
-                </div>
-              </div>
-            )}
           </div>
         </Split>
       </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { adminSignup, adminLogin, getAdminCsrfToken } from '../../utils/api';
+import { adminSignup, adminLogin, getAdminCsrfToken, adminSendOtp } from '../../utils/api';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -15,6 +15,10 @@ const AdminAuthForm: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState('');
   const [csrfToken, setCsrfToken] = useState<string>('');
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
+  const [showResendLink, setShowResendLink] = useState(false);
+  const [adminUnverifiedEmail, setAdminUnverifiedEmail] = useState<string | null>(null);
+  const [showAdminResendLink, setShowAdminResendLink] = useState(false);
 
   const navigate = useNavigate();
   const { setUser } = useAuth();
@@ -48,10 +52,20 @@ const AdminAuthForm: React.FC = () => {
       return;
     }
     try {
-      const res = await adminSignup(signupData, csrfToken);
-      setSuccess('Signup successful! You will receive an email upon account verification.');
+      const csrfToken = await getAdminCsrfToken();
+      await adminSignup(signupData, csrfToken);
+      await adminSendOtp(signupData.email, csrfToken);
+      navigate('/admin/verify-otp', { state: { email: signupData.email } });
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Signup failed.');
+      const errorMsg = err.response?.data?.error || 'Signup failed.';
+      setError(errorMsg);
+      if (err.response?.data?.unverified && err.response?.data?.email) {
+        setUnverifiedEmail(err.response.data.email);
+        setShowResendLink(true);
+      } else {
+        setShowResendLink(false);
+        setUnverifiedEmail(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -62,17 +76,27 @@ const AdminAuthForm: React.FC = () => {
     setLoading(true);
     setError('');
     setSuccess('');
+    setShowAdminResendLink(false);
+    setAdminUnverifiedEmail(null);
     try {
       const res = await adminLogin(loginData.email, loginData.password, csrfToken);
       if (res.admin && res.admin.status === 'pending') {
         setSuccess('Your account is pending approval. Please wait for account verification. You will receive an email once your account is approved.');
-      } else {
+      } else if (res.admin && res.admin.status === 'verified') {
         setSuccess(res.message);
         setUser(res.admin);
         navigate('/admin');
+      } else {
+        setError('Login failed.');
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Login failed.');
+      if (err.response?.data?.adminUnverified && err.response?.data?.email) {
+        setError(err.response.data.error || 'Your email is not verified.');
+        setAdminUnverifiedEmail(err.response.data.email);
+        setShowAdminResendLink(true);
+      } else {
+        setError(err.response?.data?.error || 'Login failed.');
+      }
     } finally {
       setLoading(false);
     }
@@ -81,7 +105,7 @@ const AdminAuthForm: React.FC = () => {
   // Dynamic height for container (top fixed, bottom stretches)
   const baseSignupHeight = 'h-[530px]';
   const expandedSignupHeight = 'h-[600px]';
-  const baseLoginHeight = 'h-[370px]';
+  const baseLoginHeight = 'h-[400px]';
   const expandedLoginHeight = 'h-[430px]';
   const containerHeight = activeTab === 'signup'
     ? (error || success ? expandedSignupHeight : baseSignupHeight)
@@ -118,7 +142,34 @@ const AdminAuthForm: React.FC = () => {
           {activeTab === 'signup' && (
             <form onSubmit={handleSignup} className="space-y-4">
               <h2 className="text-xl font-bold mb-4 text-center text-gray-900 dark:text-white">Admin Sign Up</h2>
-              {error && <div className="p-2 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 rounded-lg border border-red-200 dark:border-red-700">{error}</div>}
+              {error && (
+                <div className="p-2 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 rounded-lg border border-red-200 dark:border-red-700">
+                  {error}
+                  {showResendLink && unverifiedEmail && (
+                    <div className="mt-2">
+                      <button
+                        type="button"
+                        className="text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 ml-1"
+                        onClick={async () => {
+                          setLoading(true);
+                          setError('');
+                          try {
+                            const csrfToken = await getAdminCsrfToken();
+                            await adminSendOtp(unverifiedEmail, csrfToken);
+                            navigate('/admin/verify-otp', { state: { email: unverifiedEmail } });
+                          } catch (e) {
+                            setError('Failed to resend OTP. Please try again.');
+                          } finally {
+                            setLoading(false);
+                          }
+                        }}
+                      >
+                        Click here to verify your account
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
               {success && <div className="p-2 text-sm text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400 rounded-lg border border-green-200 dark:border-green-700">{success}</div>}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name<span className="text-red-500">*</span></label>
@@ -152,7 +203,34 @@ const AdminAuthForm: React.FC = () => {
           {activeTab === 'login' && (
             <form onSubmit={handleLogin} className="space-y-4">
               <h2 className="text-xl font-bold mb-4 text-center text-gray-900 dark:text-white">Admin Log In</h2>
-              {error && <div className="p-2 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 rounded-lg border border-red-200 dark:border-red-700">{error}</div>}
+              {error && (
+                <div className="p-2 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 rounded-lg border border-red-200 dark:border-red-700">
+                  {error}
+                  {showAdminResendLink && adminUnverifiedEmail && (
+                    <div className="mt-2">
+                      <button
+                        type="button"
+                        className="text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 ml-1"
+                        onClick={async () => {
+                          setLoading(true);
+                          setError('');
+                          try {
+                            const csrfToken = await getAdminCsrfToken();
+                            await adminSendOtp(adminUnverifiedEmail, csrfToken);
+                            navigate('/admin/verify-otp', { state: { email: adminUnverifiedEmail } });
+                          } catch (e) {
+                            setError('Failed to resend OTP. Please try again.');
+                          } finally {
+                            setLoading(false);
+                          }
+                        }}
+                      >
+                        Click here to verify your account
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
               {success && <div className="p-2 text-sm text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400 rounded-lg border border-green-200 dark:border-green-700">{success}</div>}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email Address<span className="text-red-500">*</span></label>
@@ -163,6 +241,13 @@ const AdminAuthForm: React.FC = () => {
                 <input type="password" name="password" value={loginData.password} onChange={handleLoginChange} required className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
               </div>
               <button type="submit" disabled={loading} className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50">{loading ? 'Logging In...' : 'Log In'}</button>
+              <button
+                type="button"
+                className="w-full mt-2 px-4 bg-transparent text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium rounded-lg transition-colors border border-transparent"
+                onClick={() => navigate('/admin/forgot-password')}
+              >
+                Forgot Password?
+              </button>
             </form>
           )}
         </div>

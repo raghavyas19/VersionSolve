@@ -10,6 +10,8 @@ const LoginForm: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
+  const [showResendLink, setShowResendLink] = useState(false);
   
   const { login: authLogin, redirectPath, setRedirectPath } = useAuth();
   const navigate = useNavigate();
@@ -26,18 +28,31 @@ const LoginForm: React.FC = () => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    setShowResendLink(false);
+    setUnverifiedEmail(null);
 
     try {
-      const success = await authLogin(email, password);
-      if (success) {
-      const destination = redirectPath || '/dashboard';
-      setRedirectPath(null);
-      navigate(destination, { replace: true });
+      const result = await authLogin(email, password);
+      if (result && typeof result === 'object' && 'unverified' in result && result.unverified && result.email) {
+        setError(result.error || 'Your email is not verified.');
+        setUnverifiedEmail(result.email);
+        setShowResendLink(true);
+      } else if (result && typeof result === 'object' && 'isEmailVerified' in result && result.isEmailVerified) {
+        const destination = redirectPath || '/dashboard';
+        setRedirectPath(null);
+        navigate(destination, { replace: true });
       } else {
         setError('Invalid credentials.');
       }
-    } catch (err) {
-      const errorMsg = err.response?.data?.error || 'An error occurred. Please try again.';
+    } catch (err: any) {
+      let errorMsg = 'An error occurred. Please try again.';
+      if (err && typeof err === 'object') {
+        if ('response' in err && err.response?.data?.error) {
+          errorMsg = err.response.data.error;
+        } else if ('message' in err) {
+          errorMsg = err.message;
+        }
+      }
       setError(errorMsg);
     } finally {
       setIsLoading(false);
@@ -82,6 +97,29 @@ const LoginForm: React.FC = () => {
             {error && (
               <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 rounded-lg border border-red-200 dark:border-red-700">
                 {error}
+                {showResendLink && unverifiedEmail && (
+                  <div className="mt-2">
+                    <button
+                      type="button"
+                      className="text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 ml-1"
+                      onClick={async () => {
+                        setIsLoading(true);
+                        setError('');
+                        try {
+                          // sendOtp is imported from api
+                          await import('../../utils/api').then(({ sendOtp }) => sendOtp(unverifiedEmail));
+                          navigate('/verify-otp', { state: { email: unverifiedEmail } });
+                        } catch (e) {
+                          setError('Failed to resend OTP. Please try again.');
+                        } finally {
+                          setIsLoading(false);
+                        }
+                      }}
+                    >
+                      Click here to verify your account
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -99,6 +137,7 @@ const LoginForm: React.FC = () => {
                   required
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                   placeholder="Enter your email"
+                  autoFocus
                 />
               </div>
             </div>
@@ -130,7 +169,7 @@ const LoginForm: React.FC = () => {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !email || !password}
               className="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isLoading ? 'Signing In...' : 'Sign In'}
@@ -158,9 +197,16 @@ const LoginForm: React.FC = () => {
               </svg>
               Continue with Google
             </button>
+            <button
+              type="button"
+              className="w-full mt-2 px-4 bg-transparent text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium rounded-lg transition-colors border border-transparent"
+              onClick={() => navigate('/forgot-password')}
+            >
+              Forgot Password?
+            </button>
           </form>
 
-          <div className="mt-8 text-center">
+          <div className="mt-4 text-center">
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Don't have an account?{' '}
               <Link 

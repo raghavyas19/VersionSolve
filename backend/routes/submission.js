@@ -17,4 +17,7 @@ router.get('/', validatePagination, submissionController.getSubmissions);
 // Get user stats (solved problems and submissions)
 router.get('/stats', submissionController.getUserStats);
 
+// Get list of solved problem IDs for the authenticated user
+router.get('/solved', submissionController.getSolvedProblems);
+
 module.exports = router; 

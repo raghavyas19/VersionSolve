@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, User, Phone } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { register, googleLogin, verifyToken } from '../../utils/api';
+import { register, googleLogin, verifyToken, sendOtp } from '../../utils/api';
 import { clearUserData } from '../../utils/memoryManager';
+import axios from 'axios';
 
 const SignupForm: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -17,6 +18,8 @@ const SignupForm: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
+  const [showResendLink, setShowResendLink] = useState(false);
   
   const { setUser, redirectPath, setRedirectPath } = useAuth();
   const navigate = useNavigate();
@@ -59,23 +62,27 @@ const SignupForm: React.FC = () => {
     }
 
     try {
-      const { message, token } = await register({
+      await register({
         name: formData.fullName,
         username: formData.username,
         email: formData.email,
         password: formData.password,
         confirmPassword: formData.confirmPassword,
       });
-      localStorage.setItem('token', token);
-      const verifyRes = await verifyToken();
-      setUser(verifyRes.user);
-      clearUserData();
-      const destination = redirectPath || '/dashboard';
-      setRedirectPath(null);
-      navigate(destination, { replace: true });
+      // Send OTP after successful registration
+      await sendOtp(formData.email);
+      // Redirect to OTP verification page
+      navigate('/verify-otp', { state: { email: formData.email } });
     } catch (err) {
       const errorMsg = err.response?.data?.error || 'An error occurred. Please try again.';
       setError(errorMsg);
+      if (err.response?.data?.unverified && err.response?.data?.email) {
+        setUnverifiedEmail(err.response.data.email);
+        setShowResendLink(true);
+      } else {
+        setShowResendLink(false);
+        setUnverifiedEmail(null);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -126,6 +133,28 @@ const SignupForm: React.FC = () => {
             {error && (
               <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 rounded-lg border border-red-200 dark:border-red-700">
                 {error}
+                {showResendLink && unverifiedEmail && (
+                  <div className="mt-2">
+                    <button
+                      type="button"
+                      className="text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 ml-1"
+                      onClick={async () => {
+                        setIsLoading(true);
+                        setError('');
+                        try {
+                          await sendOtp(unverifiedEmail);
+                          navigate('/verify-otp', { state: { email: unverifiedEmail } });
+                        } catch (e) {
+                          setError('Failed to resend OTP. Please try again.');
+                        } finally {
+                          setIsLoading(false);
+                        }
+                      }}
+                    >
+                      Click here to verify your account
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 

@@ -1,8 +1,12 @@
 require('dotenv').config();
 const createApp = require('./config/app');
 const connectDB = require('./config/db');
+const express = require('express');
 
 const app = createApp();
+
+// Serve static files from the 'public' directory
+app.use(express.static('public'));
 
 // Connect to database
 connectDB();

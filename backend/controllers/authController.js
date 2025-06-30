@@ -3,8 +3,15 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const passport = require('passport');
 const { asyncHandler } = require('../middlewares/errorHandler');
+const redisClient = require('../config/redis');
+const sendEmail = require('../utils/sendEmail');
 
 const secretKey = process.env.JWT_SECRET || 'your-secret-key';
+
+// Helper to generate 6-digit OTP
+function generateOTP() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
 
 exports.register = asyncHandler(async (req, res) => {
   const { name, username, email, password, confirmPassword } = req.body;
@@ -19,7 +26,11 @@ exports.register = asyncHandler(async (req, res) => {
 
   const existingUser = await User.findOne({ $or: [{ email }, { username }] });
   if (existingUser) {
-    return res.status(400).json({ error: 'Username or email already exists' });
+    if (existingUser.isEmailVerified) {
+      return res.status(400).json({ error: 'User already exists.' });
+    } else {
+      return res.status(400).json({ error: 'Account exists but not verified.', unverified: true, email: existingUser.email });
+    }
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -47,6 +58,10 @@ exports.login = asyncHandler(async (req, res) => {
     return res.status(401).json({ error: 'Invalid email/username or password' });
   }
 
+  if (!user.isEmailVerified) {
+    return res.status(403).json({ error: 'Your email is not verified.', unverified: true, email: user.email });
+  }
+
   // Update last login
   user.lastLogin = new Date();
   await user.save();
@@ -64,7 +79,8 @@ exports.login = asyncHandler(async (req, res) => {
       role: user.role,
       isActive: user.isActive,
       lastLogin: user.lastLogin,
-      createdAt: user.createdAt
+      createdAt: user.createdAt,
+      isEmailVerified: user.isEmailVerified
     }
   });
 });
@@ -108,7 +124,72 @@ exports.verify = asyncHandler(async (req, res) => {
       role: req.user.role,
       isActive: req.user.isActive,
       lastLogin: req.user.lastLogin,
-      createdAt: req.user.createdAt
+      createdAt: req.user.createdAt,
+      isEmailVerified: req.user.isEmailVerified
     }
   });
+});
+
+exports.sendOtp = asyncHandler(async (req, res) => {
+  const { email, forPasswordReset } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email is required' });
+
+  const user = await User.findOne({ email });
+  if (!user) return res.status(404).json({ error: 'User not found' });
+
+  if (!forPasswordReset && user.isEmailVerified) {
+    return res.status(400).json({ error: 'Email already verified' });
+  }
+
+  const otp = generateOTP();
+  await redisClient.set(`otp:${email}`, otp, { EX: 300 }); // 5 min expiry
+
+  await sendEmail({
+    to: email,
+    subject: forPasswordReset ? 'Your OTP for password reset' : 'Your OTP for account verification',
+    otp
+  });
+
+  res.json({ message: 'OTP sent to email' });
+});
+
+exports.verifyOtp = asyncHandler(async (req, res) => {
+  const { email, otp, forPasswordReset } = req.body;
+  if (!email || !otp) return res.status(400).json({ error: 'Email and OTP are required' });
+
+  const user = await User.findOne({ email });
+  if (!user) return res.status(404).json({ error: 'User not found' });
+
+  if (!forPasswordReset && user.isEmailVerified) return res.status(400).json({ error: 'Email already verified' });
+
+  const storedOtp = await redisClient.get(`otp:${email}`);
+  if (!storedOtp) return res.status(400).json({ error: 'OTP expired or not found' });
+  if (storedOtp !== otp) return res.status(400).json({ error: 'Invalid OTP' });
+
+  if (forPasswordReset) {
+    await redisClient.del(`otp:${email}`);
+    return res.json({ message: 'OTP verified for password reset' });
+  }
+
+  user.isEmailVerified = true;
+  await user.save();
+  await redisClient.del(`otp:${email}`);
+
+  const token = jwt.sign({ id: user._id, username: user.username }, secretKey, { expiresIn: '1h' });
+  res.json({ message: 'Email verified', token });
+});
+
+exports.resetPassword = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and new password are required.' });
+  }
+  const user = await User.findOne({ email });
+  if (!user) {
+    return res.status(404).json({ error: 'User not found.' });
+  }
+  const hashedPassword = await bcrypt.hash(password, 10);
+  user.password = hashedPassword;
+  await user.save();
+  res.json({ message: 'Password reset successful.' });
 });

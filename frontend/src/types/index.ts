@@ -9,6 +9,7 @@ export interface User {
   avatar?: string;
   joinedAt: Date;
   name?: string;
+  isEmailVerified?: boolean;
 }
 
 export interface Problem {

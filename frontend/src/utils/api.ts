@@ -152,4 +152,52 @@ export const getAdminCsrfToken = async () => {
   return response.data.csrfToken;
 };
 
+export const sendOtp = async (email: string, forPasswordReset?: boolean) => {
+  const response = await api.post('/auth/send-otp', { email, ...(forPasswordReset ? { forPasswordReset: true } : {}) });
+  return response.data;
+};
+
+export const verifyOtp = async (email: string, otp: string, forPasswordReset?: boolean) => {
+  const response = await api.post('/auth/verify-otp', { email, otp, ...(forPasswordReset ? { forPasswordReset: true } : {}) });
+  return response.data;
+};
+
+export const adminSendOtp = async (email: string, csrfToken?: string, forPasswordReset?: boolean) => {
+  const response = await api.post(
+    '/admin/auth/send-otp',
+    { email, ...(forPasswordReset ? { forPasswordReset: true } : {}) },
+    csrfToken ? { headers: { 'x-csrf-token': csrfToken } } : undefined
+  );
+  return response.data;
+};
+
+export const adminVerifyOtp = async (email: string, otp: string, csrfToken?: string, forPasswordReset?: boolean) => {
+  const response = await api.post(
+    '/admin/auth/verify-otp',
+    { email, otp, ...(forPasswordReset ? { forPasswordReset: true } : {}) },
+    csrfToken ? { headers: { 'x-csrf-token': csrfToken } } : undefined
+  );
+  return response.data;
+};
+
+// Fetch solved problem IDs for the authenticated user
+export const fetchSolvedProblemIds = async (): Promise<string[]> => {
+  const response = await api.get('/submission/solved');
+  return response.solvedProblemIds || [];
+};
+
+export const resetPassword = async (email: string, password: string) => {
+  const response = await api.post('/auth/reset-password', { email, password });
+  return response.data;
+};
+
+export const adminResetPassword = async (email: string, password: string, csrfToken?: string) => {
+  const response = await api.post(
+    '/admin/auth/reset-password',
+    { email, password },
+    csrfToken ? { headers: { 'x-csrf-token': csrfToken } } : undefined
+  );
+  return response.data;
+};
+
 export default api;

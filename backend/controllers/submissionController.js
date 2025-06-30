@@ -90,4 +90,19 @@ exports.getUserStats = asyncHandler(async (req, res) => {
     totalSubmissions,
     solvedProblems: solvedProblems[0]?.count || 0
   });
+});
+
+// Get list of solved problem IDs for the authenticated user
+exports.getSolvedProblems = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  // Aggregate unique problem IDs with at least one Accepted submission
+  const solved = await Submission.aggregate([
+    { $match: { user: req.user._id, status: 'Accepted' } },
+    { $group: { _id: '$problem' } }
+  ]);
+  const solvedProblemIds = solved.map(item => item._id.toString());
+  res.status(200).json({
+    success: true,
+    solvedProblemIds
+  });
 }); 

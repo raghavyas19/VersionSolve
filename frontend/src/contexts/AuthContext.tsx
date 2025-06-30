@@ -5,7 +5,7 @@ import { clearUserData, handleReload, initializeMemoryManagement } from '../util
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<User | null | { unverified: boolean; email: string; error: string }>;
   logout: () => void;
   isLoading: boolean;
   redirectPath: string | null;
@@ -62,10 +62,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<User | null | { unverified: boolean; email: string; error: string }> => {
     try {
       const response = await api.post('/auth/login', { username: email, password });
-      const { token } = response.data;
+      const { token, user } = response.data;
       localStorage.setItem('token', token);
       const verifyResponse = await api.get('/auth/verify');
       const userData = verifyResponse.data.user || null;
@@ -78,9 +78,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         initializeMemoryManagement(userData.id || userData._id);
       }
       
-      return true;
-    } catch (err) {
-      return false;
+      return userData;
+    } catch (err: any) {
+      if (err.response?.data?.unverified && err.response?.data?.email) {
+        return {
+          unverified: true,
+          email: err.response.data.email,
+          error: err.response.data.error || 'Your email is not verified.'
+        };
+      }
+      return null;
     }
   };
 

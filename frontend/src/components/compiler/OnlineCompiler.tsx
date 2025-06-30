@@ -23,11 +23,14 @@ import { LANGUAGES } from '../../utils/constants';
 import { generateAIReview } from '../../utils/codeExecution';
 import { useTheme } from '../../contexts/ThemeContext';
 import { clsx } from 'clsx';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import.meta.env;
 
 const OnlineCompiler: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [selectedLanguage, setSelectedLanguage] = useState<Language>(() => {
     return (localStorage.getItem('compiler_language') as Language) || 'python';
   });
@@ -147,12 +150,14 @@ const OnlineCompiler: React.FC = () => {
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 lg:px-6 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <Link
-              to="/"
+            <button
+              type="button"
+              onClick={() => navigate(user ? '/dashboard' : '/')}
               className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+              aria-label="Back"
             >
               <ArrowLeft className="h-5 w-5" />
-            </Link>
+            </button>
             <div className="flex items-center space-x-2">
               <img src={`${import.meta.env.BASE_URL}Logo.png`} alt="Logo" style={{width: '6rem'}} />
             </div>

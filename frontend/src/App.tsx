@@ -20,6 +20,12 @@ import ProblemCodeEditor from './components/problems/ProblemCodeEditor';
 import { clearUserData, handleReload, initializeMemoryManagement } from './utils/memoryManager';
 import { adminVerify } from './utils/api';
 import AdminLayout from './components/common/AdminLayout';
+import VerifyOtpPage from './pages/VerifyOtpPage';
+import AdminVerifyOtpPage from './pages/AdminVerifyOtpPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import AdminForgotPasswordPage from './pages/AdminForgotPasswordPage';
+import AdminResetPasswordPage from './pages/AdminResetPasswordPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useAuth();
@@ -115,6 +121,7 @@ const AppRoutes: React.FC = () => {
       {/* Public routes */}
       <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <LoginForm />} />
       <Route path="/signup" element={user ? <Navigate to="/dashboard" replace /> : <SignupForm />} />
+      <Route path="/verify-otp" element={<VerifyOtpPage />} />
       <Route path="/compiler" element={<OnlineCompiler />} />
       {/* Landing page only for root */}
       <Route path="/" element={<LandingPage />} />
@@ -147,8 +154,9 @@ const AppRoutes: React.FC = () => {
             <SubmissionsPage />
           </ProtectedRoute>
         } />
-        <Route path="problems/solve/:problemId" element={<ProblemCodeEditor />} />
       </Route>
+      {/* Place ProblemCodeEditor route OUTSIDE Layout so it is fullscreen and not wrapped by Layout/Navbar/Sidebar */}
+      <Route path="problems/solve/:problemId" element={<ProblemCodeEditor />} />
       {/* Admin routes with AdminLayout */}
       <Route path="/admin/auth" element={<AdminAuthForm />} />
       <Route path="/admin" element={<AdminLayout />}>
@@ -156,8 +164,13 @@ const AppRoutes: React.FC = () => {
         <Route path="problems" element={<ProblemManager />} />
         {/* Add more admin routes here as needed */}
       </Route>
+      <Route path="/admin/verify-otp" element={<AdminVerifyOtpPage />} />
+      <Route path="/admin/forgot-password" element={<AdminForgotPasswordPage />} />
+      <Route path="/admin/reset-password" element={<AdminResetPasswordPage />} />
       {/* Redirect unknown routes */}
       <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
     </Routes>
   );
 };

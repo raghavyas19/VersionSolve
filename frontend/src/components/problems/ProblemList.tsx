@@ -5,7 +5,7 @@ import { Search, Clock, Users, Lock } from 'lucide-react';
 import { DIFFICULTY_COLORS } from '../../utils/constants';
 import { useAuth } from '../../contexts/AuthContext';
 import { clsx } from 'clsx';
-import { fetchProblems } from '../../utils/api';
+import { fetchProblems, fetchSolvedProblemIds } from '../../utils/api';
 
 const ProblemList: React.FC = () => {
   const { user, setRedirectPath } = useAuth();
@@ -16,6 +16,7 @@ const ProblemList: React.FC = () => {
   const [problems, setProblems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [solvedProblemIds, setSolvedProblemIds] = useState<string[]>([]);
 
   useEffect(() => {
     const loadProblems = async () => {
@@ -34,6 +35,19 @@ const ProblemList: React.FC = () => {
     };
     loadProblems();
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    const loadSolved = async () => {
+      try {
+        const ids = await fetchSolvedProblemIds();
+        setSolvedProblemIds(ids);
+      } catch (err) {
+        // Ignore error for solved problems fetch
+      }
+    };
+    loadSolved();
+  }, [user]);
 
   const filteredProblems = problems.filter(problem => {
     const matchesSearch = problem.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -130,66 +144,78 @@ const ProblemList: React.FC = () => {
 
       {/* Card layout for mobile */}
       <div className="md:hidden space-y-3">
-        {filteredProblems.map((problem) => (
-          <div key={problem.id} className="w-full rounded-lg shadow border p-3 bg-[var(--color-surface)] flex flex-col gap-1 text-sm break-words">
-            <div className="flex items-center justify-between w-full">
-              <Link to={`/problems/${problem.id}`} className="font-bold text-blue-600 dark:text-blue-400 hover:underline text-base truncate w-3/4 break-words">
-                {problem.title}
-              </Link>
-              <span className={clsx(
-                'inline-flex px-2 py-1 text-xs font-medium rounded-full',
-                DIFFICULTY_COLORS[problem.difficulty as keyof typeof DIFFICULTY_COLORS]
-              )}>
-                {problem.difficulty}
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-1 text-xs text-gray-500 dark:text-gray-400 w-full break-words">
-              {problem.tags.map((tag: string) => (
-                <span key={tag} className="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded break-words">
-                  {tag}
+        {filteredProblems.map((problem) => {
+          const isSolved = user && solvedProblemIds.includes(problem.id);
+          return (
+            <div
+              key={problem.id}
+              className={clsx(
+                'w-full rounded-lg shadow border p-3 flex flex-col gap-1 text-sm break-words',
+                isSolved ? 'bg-green-100 dark:bg-green-900/40' : 'bg-[var(--color-surface)]'
+              )}
+            >
+              <div className="flex items-center justify-between w-full">
+                <Link to={`/problems/${problem.id}`} className="font-bold text-blue-600 dark:text-blue-400 hover:underline text-base truncate w-3/4 break-words">
+                  {problem.title}
+                </Link>
+                <span className={clsx(
+                  'inline-flex px-2 py-1 text-xs font-medium rounded-full',
+                  DIFFICULTY_COLORS[problem.difficulty as keyof typeof DIFFICULTY_COLORS]
+                )}>
+                  {problem.difficulty}
                 </span>
-              ))}
-            </div>
-            <div className="flex flex-wrap items-center gap-2 text-xs w-full break-words">
-              <span>{problem.submissions} submissions</span>
-              <span>{problem.acceptanceRate.toFixed(1)}% accepted</span>
-            </div>
-            <div className="flex flex-wrap items-center gap-2 text-xs w-full break-words">
-              <span>Time: {problem.timeLimit}s</span>
-              <span>Memory: {problem.memoryLimit}MB</span>
-            </div>
-            {!user && (
-              <div className="flex gap-1 mt-1 w-full">
-                <button
-                  className="solve-button flex-1 px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleLoginToSolve(problem.id, 'login');
-                  }}
-                >
-                  Sign In
-                </button>
-                <button
-                  className="solve-button flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-xs"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleLoginToSolve(problem.id, 'signup');
-                  }}
-                >
-                  Sign Up
-                </button>
               </div>
-            )}
-            {user && (
-              <button
-                className="solve-button flex-1 px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs"
-                onClick={() => handleSolveProblem(problem.id)}
-              >
-                Solve Problem
-              </button>
-            )}
-          </div>
-        ))}
+              <div className="flex flex-wrap gap-1 text-xs text-gray-500 dark:text-gray-400 w-full break-words">
+                {problem.tags.map((tag: string) => (
+                  <span key={tag} className="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded break-words">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-xs w-full break-words">
+                <span>{problem.submissions} submissions</span>
+                <span>{problem.acceptanceRate.toFixed(1)}% accepted</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-xs w-full break-words">
+                <span>Time: {problem.timeLimit}s</span>
+                <span>Memory: {problem.memoryLimit}MB</span>
+              </div>
+              {!user && (
+                <div className="flex gap-1 mt-1 w-full">
+                  <button
+                    className="solve-button flex-1 px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleLoginToSolve(problem.id, 'login');
+                    }}
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    className="solve-button flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-xs"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleLoginToSolve(problem.id, 'signup');
+                    }}
+                  >
+                    Sign Up
+                  </button>
+                </div>
+              )}
+              {user && (
+                <button
+                  className={clsx(
+                    'solve-button flex-1 px-2 py-1 text-white rounded transition-colors text-xs',
+                    isSolved ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'
+                  )}
+                  onClick={() => handleSolveProblem(problem.id)}
+                >
+                  {isSolved ? 'Solve Again' : 'Solve Problem'}
+                </button>
+              )}
+            </div>
+          );
+        })}
       </div>
       {/* Table layout for desktop */}
       <div className="hidden md:block bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -215,105 +241,114 @@ const ProblemList: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredProblems.map((problem) => (
-                <tr 
-                  key={problem.id} 
-                  className="transition-colors"
-                  onClick={(e) => handleProblemClick(problem.id, e)}
-                >
-                  <td className="px-4 sm:px-6 py-4">
-                    <div className="flex items-center space-x-3">
-                      
-                      <div className="min-w-0 flex-1">
-                        <Link
-                          to={`/problems/${problem.id}`}
-                          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-colors block truncate"
-                        >
-                          {problem.title}
-                        </Link>
-                        <div className="flex items-center mt-1 text-sm text-gray-500 dark:text-gray-400 space-x-2 sm:space-x-4">
-                          <span className="flex items-center space-x-1">
-                            <Users className="h-3 w-3" />
-                            <span>{problem.submissions}</span>
-                          </span>
-                          <span className="flex items-center space-x-1">
-                            <Clock className="h-3 w-3" />
-                            <span>{problem.timeLimit}s</span>
-                          </span>
+              {filteredProblems.map((problem) => {
+                const isSolved = user && solvedProblemIds.includes(problem.id);
+                return (
+                  <tr
+                    key={problem.id}
+                    className={clsx(
+                      'transition-colors',
+                      isSolved ? 'bg-green-100 dark:bg-green-900/40' : ''
+                    )}
+                    onClick={(e) => handleProblemClick(problem.id, e)}
+                  >
+                    <td className="px-4 sm:px-6 py-4">
+                      <div className="flex items-center space-x-3">
+                        
+                        <div className="min-w-0 flex-1">
+                          <Link
+                            to={`/problems/${problem.id}`}
+                            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-colors block truncate"
+                          >
+                            {problem.title}
+                          </Link>
+                          <div className="flex items-center mt-1 text-sm text-gray-500 dark:text-gray-400 space-x-2 sm:space-x-4">
+                            <span className="flex items-center space-x-1">
+                              <Users className="h-3 w-3" />
+                              <span>{problem.submissions}</span>
+                            </span>
+                            <span className="flex items-center space-x-1">
+                              <Clock className="h-3 w-3" />
+                              <span>{problem.timeLimit}s</span>
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-4 sm:px-6 py-4">
-                    <span className={clsx(
-                      'inline-flex px-2 py-1 text-xs font-medium rounded-full',
-                      DIFFICULTY_COLORS[problem.difficulty as keyof typeof DIFFICULTY_COLORS]
-                    )}>
-                      {problem.difficulty}
-                    </span>
-                  </td>
-                  <td className="hidden sm:table-cell px-4 sm:px-6 py-4 text-sm text-gray-900 dark:text-white">
-                    {problem.acceptanceRate.toFixed(1)}%
-                  </td>
-                  <td className="hidden md:table-cell px-4 sm:px-6 py-4">
-                    <div className="flex flex-wrap gap-1">
-                      {problem.tags.slice(0, 2).map((tag: string) => (
-                        <span
-                          key={tag}
-                          className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                      {problem.tags.length > 2 && (
-                        <span className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded">
-                          +{problem.tags.length - 2}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 sm:px-6 py-4">
-                    {!user ? (
-                      <div className="flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-2">
-                        <button
-                          className="solve-button flex items-center justify-center space-x-1 px-2 sm:px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleLoginToSolve(problem.id, 'login');
-                          }}
-                        >
-                          <Lock className="h-3 w-3" />
-                          <span className="hidden sm:inline">Sign In</span>
-                        </button>
-                        <button
-                          className="solve-button flex items-center justify-center space-x-1 px-2 sm:px-3 py-1 text-xs border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleLoginToSolve(problem.id, 'signup');
-                          }}
-                        >
-                          <span className="hidden sm:inline">Sign Up</span>
-                          <span className="sm:hidden">+</span>
-                        </button>
+                    </td>
+                    <td className="px-4 sm:px-6 py-4">
+                      <span className={clsx(
+                        'inline-flex px-2 py-1 text-xs font-medium rounded-full',
+                        DIFFICULTY_COLORS[problem.difficulty as keyof typeof DIFFICULTY_COLORS]
+                      )}>
+                        {problem.difficulty}
+                      </span>
+                    </td>
+                    <td className="hidden sm:table-cell px-4 sm:px-6 py-4 text-sm text-gray-900 dark:text-white">
+                      {problem.acceptanceRate.toFixed(1)}%
+                    </td>
+                    <td className="hidden md:table-cell px-4 sm:px-6 py-4">
+                      <div className="flex flex-wrap gap-1">
+                        {problem.tags.slice(0, 2).map((tag: string) => (
+                          <span
+                            key={tag}
+                            className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                        {problem.tags.length > 2 && (
+                          <span className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded">
+                            +{problem.tags.length - 2}
+                          </span>
+                        )}
                       </div>
-                    ) : (
-                      <button
-                        className="solve-button flex items-center justify-center space-x-1 px-2 sm:px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleSolveProblem(problem.id);
-                        }}
-                      >
-                        <span className="hidden sm:inline">Solve Problem</span>
-                        <span className="sm:hidden">→</span>
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-4 sm:px-6 py-4">
+                      {!user ? (
+                        <div className="flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-2">
+                          <button
+                            className="solve-button flex items-center justify-center space-x-1 px-2 sm:px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleLoginToSolve(problem.id, 'login');
+                            }}
+                          >
+                            <Lock className="h-3 w-3" />
+                            <span className="hidden sm:inline">Sign In</span>
+                          </button>
+                          <button
+                            className="solve-button flex items-center justify-center space-x-1 px-2 sm:px-3 py-1 text-xs border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleLoginToSolve(problem.id, 'signup');
+                            }}
+                          >
+                            <span className="hidden sm:inline">Sign Up</span>
+                            <span className="sm:hidden">+</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          className={clsx(
+                            'solve-button flex items-center justify-center space-x-1 px-2 sm:px-3 py-1 text-xs text-white rounded transition-colors',
+                            isSolved ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'
+                          )}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleSolveProblem(problem.id);
+                          }}
+                        >
+                          <span className="hidden sm:inline">{isSolved ? 'Solve Again' : 'Solve Problem'}</span>
+                          <span className="sm:hidden">→</span>
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

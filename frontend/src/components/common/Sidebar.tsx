@@ -9,12 +9,10 @@ import {
   Users, 
   Settings,
   Award,
-  Clock,
   Terminal,
   FileText,
   Shield,
   Lock,
-  Menu,
   ChevronLeft
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
