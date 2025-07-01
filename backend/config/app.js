@@ -4,6 +4,7 @@ const session = require('express-session');
 const passport = require('passport');
 const cookieParser = require('cookie-parser');
 const csurf = require('csurf');
+const multer = require('multer');
 
 // Import middleware
 const { errorHandler, notFound } = require('../middlewares/errorHandler');
@@ -18,6 +19,7 @@ const aiRouter = require('../routes/ai');
 const submissionRouter = require('../routes/submission');
 const vguyRouter = require('../routes/vguy');
 const adminRouter = require('../routes/admin');
+const userRouter = require('../routes/user');
 
 const createApp = () => {
   const app = express();
@@ -100,6 +102,7 @@ const createApp = () => {
   app.use('/api/submission', submissionRouter);
   app.use('/api/vguy', vguyRouter);
   app.use('/api/admin', adminRouter);
+  app.use('/api/users', userRouter);
 
   // 404 handler
   app.use(notFound);

@@ -7,6 +7,7 @@ export interface User {
   solvedProblems: number;
   submissions: number;
   avatar?: string;
+  profilePhotoUrl?: string;
   joinedAt: Date;
   name?: string;
   isEmailVerified?: boolean;

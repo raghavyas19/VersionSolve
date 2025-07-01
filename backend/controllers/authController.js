@@ -80,7 +80,8 @@ exports.login = asyncHandler(async (req, res) => {
       isActive: user.isActive,
       lastLogin: user.lastLogin,
       createdAt: user.createdAt,
-      isEmailVerified: user.isEmailVerified
+      isEmailVerified: user.isEmailVerified,
+      profilePhotoUrl: user.profilePhotoUrl
     }
   });
 });
@@ -125,7 +126,8 @@ exports.verify = asyncHandler(async (req, res) => {
       isActive: req.user.isActive,
       lastLogin: req.user.lastLogin,
       createdAt: req.user.createdAt,
-      isEmailVerified: req.user.isEmailVerified
+      isEmailVerified: req.user.isEmailVerified,
+      profilePhotoUrl: req.user.profilePhotoUrl
     }
   });
 });

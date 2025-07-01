@@ -47,9 +47,9 @@ const Layout: React.FC = () => {
               <ChevronRight className="h-6 w-6 text-blue-700 dark:text-blue-200" />
             </button>
           )}
-          <div className={editorOpen || hideNavAndSidebar ? '' : 'flex pt-16 min-h-[calc(100vh-4rem)]'}>
+          <div className={editorOpen || hideNavAndSidebar ? '' : 'flex pt-16'}>
             {!sidebarHidden && !editorOpen && !hideNavAndSidebar && <Sidebar />}
-            <main className={sidebarHidden || editorOpen || hideNavAndSidebar ? 'flex-1 p-6 md:px-12 min-h-screen transition-all duration-300' : 'flex-1 lg:ml-64 p-5 lg:px-8 min-h-screen transition-all duration-300'} style={{ background: 'var(--color-bg)' }}>
+            <main className={sidebarHidden || editorOpen || hideNavAndSidebar ? 'flex-1 p-6 md:px-12 transition-all duration-300' : 'flex-1 lg:ml-64 p-5 lg:px-8 transition-all duration-300'} style={{ background: 'var(--color-bg)' }}>
               <Outlet />
             </main>
           </div>

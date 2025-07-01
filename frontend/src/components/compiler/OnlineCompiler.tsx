@@ -159,7 +159,14 @@ const OnlineCompiler: React.FC = () => {
               <ArrowLeft className="h-5 w-5" />
             </button>
             <div className="flex items-center space-x-2">
-              <img src={`${import.meta.env.BASE_URL}Logo.png`} alt="Logo" style={{width: '6rem'}} />
+              <button
+                type="button"
+                onClick={() => navigate(user ? '/dashboard' : '/')}
+                className="focus:outline-none"
+                aria-label="Go to home or dashboard"
+              >
+                <img src={`${import.meta.env.BASE_URL}Logo.png`} alt="Logo" style={{width: '6rem'}} />
+              </button>
             </div>
             
             <select

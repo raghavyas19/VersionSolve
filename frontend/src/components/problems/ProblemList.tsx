@@ -160,7 +160,9 @@ const ProblemList: React.FC = () => {
                 </Link>
                 <span className={clsx(
                   'inline-flex px-2 py-1 text-xs font-medium rounded-full',
-                  DIFFICULTY_COLORS[problem.difficulty as keyof typeof DIFFICULTY_COLORS]
+                  problem.difficulty === 'Easy' && 'bg-green-100 text-green-800',
+                  problem.difficulty === 'Medium' && 'bg-yellow-100 text-yellow-800',
+                  problem.difficulty === 'Hard' && 'bg-red-100 text-red-800'
                 )}>
                   {problem.difficulty}
                 </span>
@@ -221,7 +223,7 @@ const ProblemList: React.FC = () => {
       <div className="hidden md:block bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-700">
+            <thead className="bg-gray-200 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-700">
               <tr>
                 <th className="px-4 sm:px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Problem
@@ -235,7 +237,7 @@ const ProblemList: React.FC = () => {
                 <th className="hidden md:table-cell px-4 sm:px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Tags
                 </th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Action
                 </th>
               </tr>
@@ -248,21 +250,20 @@ const ProblemList: React.FC = () => {
                     key={problem.id}
                     className={clsx(
                       'transition-colors',
-                      isSolved ? 'bg-green-100 dark:bg-green-900/40' : ''
+                      isSolved ? 'bg-green-200 dark:bg-green-900/60' : 'bg-gray-100 dark:bg-gray-800'
                     )}
                     onClick={(e) => handleProblemClick(problem.id, e)}
                   >
-                    <td className="px-4 sm:px-6 py-4">
-                      <div className="flex items-center space-x-3">
-                        
+                    <td className="px-4 sm:px-6 py-3">
+                      <div className="flex items-center space-x-1">
                         <div className="min-w-0 flex-1">
                           <Link
                             to={`/problems/${problem.id}`}
-                            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-colors block truncate"
+                            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-colors block truncate text-sm"
                           >
                             {problem.title}
                           </Link>
-                          <div className="flex items-center mt-1 text-sm text-gray-500 dark:text-gray-400 space-x-2 sm:space-x-4">
+                          <div className="flex items-center mt-0 text-xs text-gray-500 dark:text-gray-400 space-x-1 sm:space-x-2">
                             <span className="flex items-center space-x-1">
                               <Users className="h-3 w-3" />
                               <span>{problem.submissions}</span>
@@ -275,18 +276,20 @@ const ProblemList: React.FC = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 sm:px-6 py-4">
+                    <td className="px-4 sm:px-6 py-1">
                       <span className={clsx(
                         'inline-flex px-2 py-1 text-xs font-medium rounded-full',
-                        DIFFICULTY_COLORS[problem.difficulty as keyof typeof DIFFICULTY_COLORS]
+                        problem.difficulty === 'Easy' && 'bg-green-100 text-green-800',
+                        problem.difficulty === 'Medium' && 'bg-yellow-100 text-yellow-800',
+                        problem.difficulty === 'Hard' && 'bg-red-100 text-red-800'
                       )}>
                         {problem.difficulty}
                       </span>
                     </td>
-                    <td className="hidden sm:table-cell px-4 sm:px-6 py-4 text-sm text-gray-900 dark:text-white">
+                    <td className="hidden sm:table-cell px-4 sm:px-6 py-1 text-xs text-gray-900 dark:text-white">
                       {problem.acceptanceRate.toFixed(1)}%
                     </td>
-                    <td className="hidden md:table-cell px-4 sm:px-6 py-4">
+                    <td className="hidden md:table-cell px-4 sm:px-6 py-1">
                       <div className="flex flex-wrap gap-1">
                         {problem.tags.slice(0, 2).map((tag: string) => (
                           <span
@@ -303,9 +306,9 @@ const ProblemList: React.FC = () => {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 sm:px-6 py-4">
+                    <td className="px-4 sm:px-6 py-1">
                       {!user ? (
-                        <div className="flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-2">
+                        <div className="flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-1">
                           <button
                             className="solve-button flex items-center justify-center space-x-1 px-2 sm:px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
                             onClick={(e) => {

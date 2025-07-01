@@ -27,9 +27,9 @@ const AdminLayout: React.FC = () => {
           <ChevronRight className="h-6 w-6 text-blue-700 dark:text-blue-200" />
         </button>
       )}
-      <div className="flex pt-16 min-h-[calc(100vh-4rem)]">
+      <div className="flex pt-16">
         {!sidebarHidden && <AdminSidebar hidden={sidebarHidden} setHidden={setSidebarHidden} />}
-        <main className={sidebarHidden ? 'flex-1 p-6 md:px-12 min-h-screen transition-all duration-300' : 'flex-1 lg:ml-64 p-5 lg:px-8 min-h-screen transition-all duration-300'} style={{ background: 'var(--color-bg)' }}>
+        <main className={sidebarHidden ? 'flex-1 p-6 md:px-12 transition-all duration-300' : 'flex-1 lg:ml-64 p-5 lg:px-8 transition-all duration-300'} style={{ background: 'var(--color-bg)' }}>
           <Outlet />
         </main>
       </div>

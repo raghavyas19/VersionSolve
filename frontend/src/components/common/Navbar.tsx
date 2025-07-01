@@ -30,6 +30,16 @@ const Navbar: React.FC = () => {
     { name: 'System Settings', href: '/admin/settings', icon: Settings },
   ];
 
+  // SVG fallback avatar
+  const DefaultAvatar = () => (
+    <div className="h-8 w-8 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700 border object-cover">
+      <svg width="32" height="32" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="40" cy="28" r="16" fill="#CBD5E1" />
+        <ellipse cx="40" cy="60" rx="24" ry="14" fill="#CBD5E1" />
+      </svg>
+    </div>
+  );
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b px-4 lg:px-6 py-3 shadow-md" style={{ background: 'var(--color-surface)', color: 'var(--color-text)' }}>
       <div className="flex items-center justify-between">
@@ -39,7 +49,7 @@ const Navbar: React.FC = () => {
           </Link>
           <div className="hidden md:block flex-1">
             <div className="mx-auto max-w-xs">
-              <div className="relative">
+              {/* <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
                 <input
                   type="text"
@@ -47,7 +57,7 @@ const Navbar: React.FC = () => {
                   className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
                   style={{ minWidth: '180px' }}
                 />
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
@@ -56,7 +66,7 @@ const Navbar: React.FC = () => {
         <div className="hidden md:flex items-center space-x-2 lg:space-x-4">
           <button
             onClick={toggleTheme}
-            className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+            className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors rounded-lg hover:bg-gray-200/70 dark:hover:bg-gray-700/70"
           >
             {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
           </button>
@@ -66,7 +76,7 @@ const Navbar: React.FC = () => {
                 <span className="text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap">{user.name}</span>
                 <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{user.rating}</span>
               </div>
-              <button className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
+              <button className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors rounded-lg hover:bg-gray-200/70 dark:hover:bg-gray-700/70">
                 <Bell className="h-5 w-5" />
               </button>
             </>
@@ -74,13 +84,64 @@ const Navbar: React.FC = () => {
           {user ? (
             <div className="flex items-center space-x-3">
               <div className="relative">
-                <button className="flex items-center space-x-1 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                  <User className="h-6 w-6 text-gray-500 dark:text-gray-400" />
+                <button
+                  className="flex items-center space-x-1 p-2 rounded-lg hover:bg-gray-200/70 dark:hover:bg-gray-700/70 transition-colors"
+                  onClick={() => setUserMenuOpen((open) => !open)}
+                  aria-label="User menu"
+                >
+                  {user.profilePhotoUrl ? (
+                    <img
+                      src={user.profilePhotoUrl}
+                      alt="Profile"
+                      className="h-8 w-8 rounded-full object-cover border-2 border-blue-400 dark:border-blue-500"
+                    />
+                  ) : (
+                    <div className="h-8 w-8 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700 border-2 border-blue-400 dark:border-blue-500 object-cover">
+                      <svg width="32" height="32" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="40" cy="28" r="16" fill="#CBD5E1" />
+                        <ellipse cx="40" cy="60" rx="24" ry="14" fill="#CBD5E1" />
+                      </svg>
+                    </div>
+                  )}
                 </button>
+                {userMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-900 rounded-lg shadow-lg py-4 z-50 animate-fade-in-down border border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center px-4 pb-3 border-b border-gray-100 dark:border-gray-800">
+                      {user.profilePhotoUrl ? (
+                        <img
+                          src={user.profilePhotoUrl}
+                          alt="Profile"
+                          className="h-12 w-12 rounded-full object-cover border-2 border-blue-400 dark:border-blue-500 mr-3"
+                        />
+                      ) : (
+                        <div className="h-12 w-12 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700 border-2 border-blue-400 dark:border-blue-500 mr-3">
+                          <svg width="48" height="48" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="40" cy="28" r="16" fill="#CBD5E1" />
+                            <ellipse cx="40" cy="60" rx="24" ry="14" fill="#CBD5E1" />
+                          </svg>
+                        </div>
+                      )}
+                      <div>
+                        <div className="font-semibold text-gray-900 dark:text-white">{user.name}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">@{user.username}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{user.email}</div>
+                      </div>
+                    </div>
+                    <div className="px-4 pt-3">
+                      <Link
+                        to={`/profile/${user.username}`}
+                        className="block w-full text-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        View Profile
+                      </Link>
+                    </div>
+                  </div>
+                )}
               </div>
               <button
                 onClick={logout}
-                className="text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                className="text-sm text-white bg-red-500 hover:bg-red-600 rounded-lg px-4 py-1 transition-colors shadow"
               >
                 Logout
               </button>
@@ -143,7 +204,7 @@ const Navbar: React.FC = () => {
       </div>
       {/* Mobile dropdown menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden mt-2 bg-white dark:bg-gray-900 rounded-lg shadow-lg p-4 flex flex-col space-y-1 animate-fade-in-down">
+        <div className="md:hidden mt-2 bg-gray-200 dark:bg-gray-900 rounded-lg shadow-lg p-4 flex flex-col space-y-1 animate-fade-in-down">
           {/* Sidebar navigation items for mobile */}
           {navigation.map((item) => {
             const isActive = location.pathname === item.href;

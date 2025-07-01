@@ -26,6 +26,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import AdminForgotPasswordPage from './pages/AdminForgotPasswordPage';
 import AdminResetPasswordPage from './pages/AdminResetPasswordPage';
+import ProfilePage from './pages/ProfilePage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useAuth();
@@ -33,7 +34,22 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div>Loading...</div>
+        <svg className="animate-spin h-10 w-10 text-blue-600" viewBox="0 0 50 50">
+          <circle
+            className="opacity-25"
+            cx="25"
+            cy="25"
+            r="20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="5"
+          />
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M25 5a20 20 0 0 1 20 20h-5a15 15 0 1 0-15 15v5A20 20 0 0 1 25 5z"
+          />
+        </svg>
       </div>
     );
   }
@@ -84,7 +100,22 @@ const AuthHandler: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <div>Loading...</div>
+      <svg className="animate-spin h-10 w-10 text-blue-600" viewBox="0 0 50 50">
+        <circle
+          className="opacity-25"
+          cx="25"
+          cy="25"
+          r="20"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="5"
+        />
+        <path
+          className="opacity-75"
+          fill="currentColor"
+          d="M25 5a20 20 0 0 1 20 20h-5a15 15 0 1 0-15 15v5A20 20 0 0 1 25 5z"
+        />
+      </svg>
     </div>
   );
 };
@@ -111,7 +142,22 @@ const AppRoutes: React.FC = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div>Loading...</div>
+        <svg className="animate-spin h-10 w-10 text-blue-600" viewBox="0 0 50 50">
+          <circle
+            className="opacity-25"
+            cx="25"
+            cy="25"
+            r="20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="5"
+          />
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M25 5a20 20 0 0 1 20 20h-5a15 15 0 1 0-15 15v5A20 20 0 0 1 25 5z"
+          />
+        </svg>
       </div>
     );
   }
@@ -125,8 +171,9 @@ const AppRoutes: React.FC = () => {
       <Route path="/compiler" element={<OnlineCompiler />} />
       {/* Landing page only for root */}
       <Route path="/" element={<LandingPage />} />
-      {/* Main app routes with Layout */}
       <Route path="/*" element={<Layout />}> 
+        <Route path="profile/:username" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+        {/* Main app routes with Layout */}
         <Route path="dashboard" element={
           window.location.search.includes('token=') ? <AuthHandler /> :
           <ProtectedRoute>

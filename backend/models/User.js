@@ -29,7 +29,14 @@ const userSchema = new mongoose.Schema({
   updatedAt: { 
     type: Date, 
     default: Date.now 
-  }
+  },
+  // Profile fields
+  bio: { type: String, default: '' },
+  profilePhotoUrl: { type: String, default: '' },
+  github: { type: String, default: '' },
+  linkedin: { type: String, default: '' },
+  twitter: { type: String, default: '' },
+  website: { type: String, default: '' }
 });
 
 // Update the updatedAt field before saving

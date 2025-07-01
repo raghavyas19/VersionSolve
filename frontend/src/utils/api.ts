@@ -183,7 +183,7 @@ export const adminVerifyOtp = async (email: string, otp: string, csrfToken?: str
 // Fetch solved problem IDs for the authenticated user
 export const fetchSolvedProblemIds = async (): Promise<string[]> => {
   const response = await api.get('/submission/solved');
-  return response.solvedProblemIds || [];
+  return response.data.solvedProblemIds || [];
 };
 
 export const resetPassword = async (email: string, password: string) => {
@@ -197,6 +197,41 @@ export const adminResetPassword = async (email: string, password: string, csrfTo
     { email, password },
     csrfToken ? { headers: { 'x-csrf-token': csrfToken } } : undefined
   );
+  return response.data;
+};
+
+// User Profile APIs
+export const fetchUserProfile = async (username: string) => {
+  const response = await api.get(`/users/${username}`);
+  return response.data;
+};
+
+export const updateUserProfile = async (username: string, data: {
+  bio?: string;
+  profilePhotoUrl?: string;
+  github?: string;
+  linkedin?: string;
+  twitter?: string;
+  website?: string;
+  theme?: string;
+}) => {
+  const response = await api.put(`/users/${username}`, data);
+  return response.data;
+};
+
+// Upload user profile photo
+export const uploadUserProfilePhoto = async (username: string, file: File) => {
+  const formData = new FormData();
+  formData.append('image', file);
+  const response = await api.post(`/users/${username}/upload-photo`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};
+
+// Change user password
+export const changeUserPassword = async (username: string, currentPassword: string, newPassword: string) => {
+  const response = await api.put(`/users/${username}/change-password`, { currentPassword, newPassword });
   return response.data;
 };
 
