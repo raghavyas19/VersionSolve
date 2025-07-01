@@ -18,7 +18,7 @@ import AdminDashboard from './components/admin/AdminDashboard';
 import ProblemManager from './components/admin/ProblemManager';
 import ProblemCodeEditor from './components/problems/ProblemCodeEditor';
 import { clearUserData, handleReload, initializeMemoryManagement } from './utils/memoryManager';
-import { adminVerify } from './utils/api';
+import api, { adminVerify } from './utils/api';
 import AdminLayout from './components/common/AdminLayout';
 import VerifyOtpPage from './pages/VerifyOtpPage';
 import AdminVerifyOtpPage from './pages/AdminVerifyOtpPage';
@@ -72,26 +72,24 @@ const AuthHandler: React.FC = () => {
       localStorage.setItem('token', token);
       params.delete('token');
       // Verify token and update user
-      import('./utils/api').then(({ default: api }) => {
-        api.get('/auth/verify')
-          .then(res => {
-            const userData = res.data.user || null;
-            setUser(userData);
-            
-            // Handle reload for newly authenticated user
-            if (userData) {
-              handleReload(userData.id || userData._id);
-              // Initialize memory management for newly authenticated user
-              initializeMemoryManagement(userData.id || userData._id);
-            }
-            
-            navigate('/dashboard', { replace: true });
-          })
-          .catch(() => {
-            setUser(null);
-            navigate('/login', { replace: true });
-          });
-      });
+      api.get('/auth/verify')
+        .then(res => {
+          const userData = res.data.user || null;
+          setUser(userData);
+          
+          // Handle reload for newly authenticated user
+          if (userData) {
+            handleReload(userData.id || userData._id);
+            // Initialize memory management for newly authenticated user
+            initializeMemoryManagement(userData.id || userData._id);
+          }
+          
+          navigate('/dashboard', { replace: true });
+        })
+        .catch(() => {
+          setUser(null);
+          navigate('/login', { replace: true });
+        });
     } else {
       navigate('/login', { replace: true });
     }

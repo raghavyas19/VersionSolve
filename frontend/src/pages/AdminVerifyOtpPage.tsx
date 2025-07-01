@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { adminSendOtp, adminVerifyOtp, verifyToken, getAdminCsrfToken } from '../utils/api';
+import { adminSendOtp, adminVerifyOtp, verifyToken, getAdminCsrfToken, adminVerify } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
 import { Shield } from 'lucide-react';
 
@@ -61,7 +61,7 @@ const AdminVerifyOtpPage: React.FC = () => {
         if (!forPasswordReset && res.token) {
           localStorage.setItem('token', res.token);
           // Fetch admin info and set in context
-          const verifyRes = await import('../utils/api').then(({ adminVerify }) => adminVerify());
+          const verifyRes = await adminVerify();
           setUser(verifyRes.admin);
         }
         if (forPasswordReset) {

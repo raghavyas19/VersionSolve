@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Code2, Mail, Lock, Eye, EyeOff, Phone } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { login, googleLogin } from '../../utils/api';
+import { login, googleLogin, sendOtp } from '../../utils/api';
 
 const LoginForm: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -106,8 +106,7 @@ const LoginForm: React.FC = () => {
                         setIsLoading(true);
                         setError('');
                         try {
-                          // sendOtp is imported from api
-                          await import('../../utils/api').then(({ sendOtp }) => sendOtp(unverifiedEmail));
+                          await sendOtp(unverifiedEmail);
                           navigate('/verify-otp', { state: { email: unverifiedEmail } });
                         } catch (e) {
                           setError('Failed to resend OTP. Please try again.');
