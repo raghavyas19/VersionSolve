@@ -225,25 +225,16 @@ const ProblemList: React.FC = () => {
           <table className="w-full">
             <thead className="bg-gray-200 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-4 sm:px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Problem
-                </th>
-                <th className="px-4 sm:px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Difficulty
-                </th>
-                <th className="hidden sm:table-cell px-4 sm:px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Acceptance
-                </th>
-                <th className="hidden md:table-cell px-4 sm:px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Tags
-                </th>
-                <th className="px-4 sm:px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Action
-                </th>
+                <th className="px-0 py-2 w-12 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-r border-gray-300 dark:border-gray-700">#</th>
+                <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Problem</th>
+                <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Difficulty</th>
+                <th className="hidden sm:table-cell px-4 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acceptance</th>
+                <th className="hidden md:table-cell px-4 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tags</th>
+                <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredProblems.map((problem) => {
+              {filteredProblems.map((problem, idx) => {
                 const isSolved = user && solvedProblemIds.includes(problem.id);
                 return (
                   <tr
@@ -254,7 +245,8 @@ const ProblemList: React.FC = () => {
                     )}
                     onClick={(e) => handleProblemClick(problem.id, e)}
                   >
-                    <td className="px-4 sm:px-6 py-3">
+                    <td className="px-0 py-2 w-12 border-r border-gray-300 dark:border-gray-700 text-center">{idx + 1}</td>
+                    <td className="px-4 py-2 text-center">
                       <div className="flex items-center space-x-1">
                         <div className="min-w-0 flex-1">
                           <Link
@@ -276,7 +268,7 @@ const ProblemList: React.FC = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 sm:px-6 py-1">
+                    <td className="px-4 py-2 text-center">
                       <span className={clsx(
                         'inline-flex px-2 py-1 text-xs font-medium rounded-full',
                         problem.difficulty === 'Easy' && 'bg-green-100 text-green-800',
@@ -286,11 +278,11 @@ const ProblemList: React.FC = () => {
                         {problem.difficulty}
                       </span>
                     </td>
-                    <td className="hidden sm:table-cell px-4 sm:px-6 py-1 text-xs text-gray-900 dark:text-white">
+                    <td className="hidden sm:table-cell px-4 py-2 text-center text-xs text-gray-900 dark:text-white">
                       {problem.acceptanceRate.toFixed(1)}%
                     </td>
-                    <td className="hidden md:table-cell px-4 sm:px-6 py-1">
-                      <div className="flex flex-wrap gap-1">
+                    <td className="hidden md:table-cell px-4 py-2 text-center">
+                      <div className="flex flex-wrap gap-1 justify-center">
                         {problem.tags.slice(0, 2).map((tag: string) => (
                           <span
                             key={tag}
@@ -306,48 +298,50 @@ const ProblemList: React.FC = () => {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 sm:px-6 py-1">
-                      {!user ? (
-                        <div className="flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-1">
+                    <td className="px-4 py-2 text-center">
+                      <div className="flex items-center justify-center">
+                        {!user ? (
+                          <div className="flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-1">
+                            <button
+                              className="solve-button flex items-center justify-center space-x-1 px-2 sm:px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleLoginToSolve(problem.id, 'login');
+                              }}
+                            >
+                              <Lock className="h-3 w-3" />
+                              <span className="hidden sm:inline">Sign In</span>
+                            </button>
+                            <button
+                              className="solve-button flex items-center justify-center space-x-1 px-2 sm:px-3 py-1 text-xs border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleLoginToSolve(problem.id, 'signup');
+                              }}
+                            >
+                              <span className="hidden sm:inline">Sign Up</span>
+                              <span className="sm:hidden">+</span>
+                            </button>
+                          </div>
+                        ) : (
                           <button
-                            className="solve-button flex items-center justify-center space-x-1 px-2 sm:px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                            className={clsx(
+                              'solve-button flex items-center justify-center space-x-1 px-2 sm:px-3 py-1 text-xs text-white rounded transition-colors',
+                              isSolved ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'
+                            )}
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              handleLoginToSolve(problem.id, 'login');
+                              handleSolveProblem(problem.id);
                             }}
                           >
-                            <Lock className="h-3 w-3" />
-                            <span className="hidden sm:inline">Sign In</span>
+                            <span className="hidden sm:inline">{isSolved ? 'Solve Again' : 'Solve Problem'}</span>
+                            <span className="sm:hidden">→</span>
                           </button>
-                          <button
-                            className="solve-button flex items-center justify-center space-x-1 px-2 sm:px-3 py-1 text-xs border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleLoginToSolve(problem.id, 'signup');
-                            }}
-                          >
-                            <span className="hidden sm:inline">Sign Up</span>
-                            <span className="sm:hidden">+</span>
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          className={clsx(
-                            'solve-button flex items-center justify-center space-x-1 px-2 sm:px-3 py-1 text-xs text-white rounded transition-colors',
-                            isSolved ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'
-                          )}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleSolveProblem(problem.id);
-                          }}
-                        >
-                          <span className="hidden sm:inline">{isSolved ? 'Solve Again' : 'Solve Problem'}</span>
-                          <span className="sm:hidden">→</span>
-                        </button>
-                      )}
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

@@ -21,6 +21,12 @@ router.get('/dashboard', authenticateJWT, requireAdmin, (req, res) => {
 // Admin verify endpoint
 router.get('/verify', authenticateJWT, requireAdmin, adminController.verify);
 
+// Get all users (admin only)
+router.get('/users', authenticateJWT, requireAdmin, adminController.getAllUsers);
+
+// Get a user by username (admin only)
+router.get('/user/:username', authenticateJWT, requireAdmin, adminController.getUserByUsername);
+
 // Admin logout endpoint
 router.post('/logout', adminController.logout);
 

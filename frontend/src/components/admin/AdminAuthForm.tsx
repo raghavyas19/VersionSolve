@@ -6,7 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const AdminAuthForm: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'signup' | 'login'>('signup');
-  const [signupData, setSignupData] = useState({ name: '', email: '', password: '' });
+  const [signupData, setSignupData] = useState({ name: '', email: '', username: '', password: '' });
   const [loginData, setLoginData] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -79,7 +79,8 @@ const AdminAuthForm: React.FC = () => {
     setShowAdminResendLink(false);
     setAdminUnverifiedEmail(null);
     try {
-      const res = await adminLogin(loginData.email, loginData.password, csrfToken);
+      const freshCsrfToken = await getAdminCsrfToken();
+      const res = await adminLogin(loginData.email, loginData.password, freshCsrfToken);
       if (res.admin && res.admin.status === 'pending') {
         setSuccess('Your account is pending approval. Please wait for account verification. You will receive an email once your account is approved.');
       } else if (res.admin && res.admin.status === 'verified') {
@@ -103,8 +104,8 @@ const AdminAuthForm: React.FC = () => {
   };
 
   // Dynamic height for container (top fixed, bottom stretches)
-  const baseSignupHeight = 'h-[530px]';
-  const expandedSignupHeight = 'h-[600px]';
+  const baseSignupHeight = 'h-[630px]';
+  const expandedSignupHeight = 'h-[700px]';
   const baseLoginHeight = 'h-[400px]';
   const expandedLoginHeight = 'h-[430px]';
   const containerHeight = activeTab === 'signup'
@@ -178,6 +179,10 @@ const AdminAuthForm: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email Address<span className="text-red-500">*</span></label>
                 <input type="email" name="email" value={signupData.email} onChange={handleSignupChange} required className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Username<span className="text-red-500">*</span></label>
+                <input type="text" name="username" value={signupData.username} onChange={handleSignupChange} required className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password<span className="text-red-500">*</span></label>

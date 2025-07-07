@@ -151,10 +151,16 @@ const SubmissionsPage: React.FC = () => {
                     <td className="px-4 sm:px-6 py-2">
                       <div>
                         <div 
-                          className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 truncate cursor-pointer"
-                          onClick={() => navigate(`/problems/${submission.problem._id}`)}
+                          className={clsx(
+                            'text-sm font-medium truncate',
+                            submission.problem ? 'text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 cursor-pointer' : 'text-gray-400 cursor-not-allowed'
+                          )}
+                          onClick={() => submission.problem && navigate(`/problems/${submission.problem._id}`)}
+                          tabIndex={submission.problem ? 0 : -1}
+                          role="button"
+                          aria-disabled={!submission.problem}
                         >
-                          {submission.problem.title || 'Unknown Problem'}
+                          {submission.problem?.title || 'Unknown Problem'}
                         </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">
                           {submission.passedTests}/{submission.totalTests} test cases

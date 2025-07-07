@@ -17,6 +17,7 @@ const testCaseSchema = new mongoose.Schema({
 }, { _id: false });
 
 const problemSchema = new mongoose.Schema({
+  problemId: { type: String, required: true, unique: true }, // 6-digit unique ID
   title: { type: String, required: true },
   description: { type: String, required: true },
   difficulty: { type: String, enum: ['Easy', 'Medium', 'Hard'], required: true },
@@ -30,7 +31,8 @@ const problemSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
   examples: { type: [exampleSchema], default: [] },
   isPublic: { type: Boolean, default: true },
-  points: { type: Number, default: 100 }
+  points: { type: Number, default: 100 },
+  visible: { type: Boolean, default: true }
 });
 
 module.exports = mongoose.model('Problem', problemSchema);

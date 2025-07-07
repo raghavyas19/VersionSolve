@@ -274,9 +274,22 @@ const OnlineCompiler: React.FC = () => {
                 language={LANGUAGES[selectedLanguage].monacoLanguage}
                 value={code}
                 onChange={(value) => setCode(value || '')}
-                theme={theme === 'dark' ? 'vs-dark' : 'light'}
-                onMount={(editor) => {
+                theme={theme === 'dark' ? 'vs-dark' : 'custom-light'}
+                onMount={(editor, monaco) => {
                   editorRef.current = editor;
+                  if (monaco) {
+                    monaco.editor.defineTheme('custom-light', {
+                      base: 'vs',
+                      inherit: true,
+                      rules: [],
+                      colors: {
+                        'editor.background': '#dddddd', // blue-tinted, more visible
+                        'editor.lineHighlightBackground': '#bbbbbb',
+                        'editor.lineBackground': '#f0f7ff',
+                      },
+                    });
+                    monaco.editor.setTheme(theme === 'dark' ? 'vs-dark' : 'custom-light');
+                  }
                 }}
                 options={{
                   minimap: { enabled: false },

@@ -68,7 +68,7 @@ const validateProblemCreation = [
     .isLength({ min: 10 })
     .withMessage('Description must be at least 10 characters long'),
   body('difficulty')
-    .isIn(['easy', 'medium', 'hard'])
+    .isIn(['Easy', 'Medium', 'Hard'])
     .withMessage('Difficulty must be easy, medium, or hard'),
   body('testCases')
     .isArray({ min: 1 })
@@ -76,9 +76,9 @@ const validateProblemCreation = [
   body('testCases.*.input')
     .notEmpty()
     .withMessage('Test case input is required'),
-  body('testCases.*.output')
+  body('testCases.*.expectedOutput')
     .notEmpty()
-    .withMessage('Test case output is required'),
+    .withMessage('Test case expectedOutput is required'),
   handleValidationErrors
 ];
 

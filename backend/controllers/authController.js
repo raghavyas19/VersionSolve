@@ -58,6 +58,19 @@ exports.login = asyncHandler(async (req, res) => {
     return res.status(401).json({ error: 'Invalid email/username or password' });
   }
 
+  // Check for suspension
+  if (user.isSuspended) {
+    return res.status(403).json({ error: user.suspendReason || 'Your account is suspended and set for deletion.' });
+  }
+
+  // Check for temporary ban
+  if (user.banExpires && user.banExpires > new Date()) {
+    const ms = user.banExpires - new Date();
+    const min = Math.floor(ms / 60000);
+    const sec = Math.floor((ms % 60000) / 1000);
+    return res.status(403).json({ error: `You are temporarily banned. Time remaining: ${min}m ${sec}s`, banExpires: user.banExpires, banReason: user.suspendReason || user.banReason || '' });
+  }
+
   if (!user.isEmailVerified) {
     return res.status(403).json({ error: 'Your email is not verified.', unverified: true, email: user.email });
   }

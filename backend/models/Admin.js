@@ -18,6 +18,7 @@ const adminSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  username: { type: String, required: true, unique: true },
 });
 
 // Update the updatedAt field before saving

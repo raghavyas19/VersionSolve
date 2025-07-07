@@ -36,7 +36,12 @@ const userSchema = new mongoose.Schema({
   github: { type: String, default: '' },
   linkedin: { type: String, default: '' },
   twitter: { type: String, default: '' },
-  website: { type: String, default: '' }
+  website: { type: String, default: '' },
+  // Moderation fields
+  banExpires: { type: Date, default: null }, // If set, user is banned until this date
+  isSuspended: { type: Boolean, default: false },
+  suspendReason: { type: String, default: '' },
+  suspendedAt: { type: Date, default: null },
 });
 
 // Update the updatedAt field before saving

@@ -4,18 +4,10 @@ import {
   BookOpen, 
   Code, 
   Trophy, 
-  TrendingUp, 
   Activity,
-  Plus,
-  Settings,
-  BarChart3,
-  PieChart,
-  Calendar,
-  LogOut,
   User as UserIcon
 } from 'lucide-react';
 import { AdminStats } from '../../types';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar } from 'recharts';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { adminVerify, adminLogout } from '../../utils/api';
@@ -155,10 +147,7 @@ const AdminDashboard: React.FC = () => {
               <option value="90d">Last 90 days</option>
             </select>
             
-            <button className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-              <Plus className="h-4 w-4" />
-              <span>Add Problem</span>
-            </button>
+            
           </div>
         </div>
 
@@ -181,7 +170,7 @@ const AdminDashboard: React.FC = () => {
 
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Submission Trends */}
+          {/* Submission Trends
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Submission Trends</h3>
@@ -204,10 +193,10 @@ const AdminDashboard: React.FC = () => {
                 <Area type="monotone" dataKey="accepted" stackId="1" stroke="#10B981" fill="#10B981" fillOpacity={0.6} />
               </AreaChart>
             </ResponsiveContainer>
-          </div>
+          </div> */}
 
           {/* Language Distribution */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          {/* <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Language Usage</h3>
               <PieChart className="h-5 w-5 text-gray-400" />
@@ -249,7 +238,7 @@ const AdminDashboard: React.FC = () => {
                 </div>
               ))}
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Recent Activity & System Status */}
@@ -280,7 +269,7 @@ const AdminDashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* System Status */}
+          {/* System Status
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">System Status</h3>
@@ -313,9 +302,12 @@ const AdminDashboard: React.FC = () => {
                 <div className="bg-blue-600 h-2 rounded-full" style={{ width: '78%' }}></div>
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
+
+      {/* Add a button or link to Manage Users page in the dashboard UI */}
+      <button onClick={() => navigate('/admin/manage-users')}>Manage Users</button>
     </>
   );
 };

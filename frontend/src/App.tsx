@@ -27,6 +27,8 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import AdminForgotPasswordPage from './pages/AdminForgotPasswordPage';
 import AdminResetPasswordPage from './pages/AdminResetPasswordPage';
 import ProfilePage from './pages/ProfilePage';
+import AdminManageUsersPage from './pages/AdminManageUsersPage';
+import AdminUserProfilePage from './pages/AdminUserProfilePage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useAuth();
@@ -207,6 +209,8 @@ const AppRoutes: React.FC = () => {
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<AdminDashboard />} />
         <Route path="problems" element={<ProblemManager />} />
+        <Route path="user" element={<AdminManageUsersPage />} />
+        <Route path="user/:username" element={<AdminUserProfilePage />} />
         {/* Add more admin routes here as needed */}
       </Route>
       <Route path="/admin/verify-otp" element={<AdminVerifyOtpPage />} />

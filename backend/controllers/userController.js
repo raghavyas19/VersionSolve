@@ -114,4 +114,55 @@ exports.changePassword = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
+};
+
+// Admin: Set user inactive
+exports.setInactive = async (req, res) => {
+  try {
+    const { username } = req.params;
+    const user = await User.findOneAndUpdate(
+      { username },
+      { isActive: false },
+      { new: true }
+    );
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json({ message: 'User set to inactive', user });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Admin: Temporary ban user for 10 minutes, with optional reason
+exports.temporaryBan = async (req, res) => {
+  try {
+    const { username } = req.params;
+    const { reason } = req.body;
+    const banExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+    const user = await User.findOneAndUpdate(
+      { username },
+      { banExpires, suspendReason: reason || '' },
+      { new: true }
+    );
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json({ message: 'User temporarily banned for 10 minutes', banExpires, reason: user.suspendReason, user });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Admin: Suspend user
+exports.suspendUser = async (req, res) => {
+  try {
+    const { username } = req.params;
+    const suspendReason = req.body.reason || 'Account set for deletion';
+    const user = await User.findOneAndUpdate(
+      { username },
+      { isSuspended: true, suspendReason, suspendedAt: new Date() },
+      { new: true }
+    );
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json({ message: 'User suspended', user });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
 }; 

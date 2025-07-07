@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
-const { authenticateJWT } = require('../middlewares/auth');
+const { authenticateJWT, requireAdmin } = require('../middlewares/auth');
 
 // Public: Get user profile by username
 router.get('/:username', userController.getUserByUsername);
@@ -19,5 +19,14 @@ router.post(
 
 // Private: Change user password (only self)
 router.put('/:username/change-password', authenticateJWT, userController.changePassword);
+
+// Admin: Set user inactive
+router.post('/:username/set-inactive', authenticateJWT, requireAdmin, userController.setInactive);
+
+// Admin: Temporary ban user
+router.post('/:username/temporary-ban', authenticateJWT, requireAdmin, userController.temporaryBan);
+
+// Admin: Suspend user
+router.post('/:username/suspend', authenticateJWT, requireAdmin, userController.suspendUser);
 
 module.exports = router; 

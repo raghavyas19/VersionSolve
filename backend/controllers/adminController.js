@@ -169,4 +169,26 @@ exports.resetPassword = async (req, res) => {
   admin.password = hashedPassword;
   await admin.save();
   res.json({ message: 'Password reset successful.' });
+};
+
+// Get all users (admin only)
+exports.getAllUsers = async (req, res) => {
+  try {
+    const users = await require('../models/User').find({}, '-password'); // Exclude password
+    res.json({ users });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error.' });
+  }
+};
+
+// Get a user by username (admin only)
+exports.getUserByUsername = async (req, res) => {
+  try {
+    const { username } = req.params;
+    const user = await require('../models/User').findOne({ username }, '-password');
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json({ user });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error.' });
+  }
 }; 

@@ -126,6 +126,7 @@ export const fetchUserSubmissions = async (problemId?: string, page: number = 1,
 export const adminSignup = async (data: {
   name: string;
   email: string;
+  username: string;
   password: string;
 }, csrfToken?: string) => {
   const response = await api.post('/admin/auth/signup', data, csrfToken ? { headers: { 'x-csrf-token': csrfToken } } : undefined);
@@ -232,6 +233,57 @@ export const uploadUserProfilePhoto = async (username: string, file: File) => {
 // Change user password
 export const changeUserPassword = async (username: string, currentPassword: string, newPassword: string) => {
   const response = await api.put(`/users/${username}/change-password`, { currentPassword, newPassword });
+  return response.data;
+};
+
+export const fetchAllUsers = async () => {
+  const response = await api.get('/admin/users');
+  return response.data.users;
+};
+
+export const adminFetchUserProfile = async (username: string) => {
+  const response = await api.get(`/admin/user/${username}`);
+  return response.data.user;
+};
+
+export const updateProblem = async (id: string, problemData: any) => {
+  const response = await api.put(`/problem/${id}`, problemData);
+  return response.data;
+};
+
+export const deleteProblem = async (id: string) => {
+  const response = await api.delete(`/problem/${id}`);
+  return response.data;
+};
+
+export const createDraftProblem = async (draftData: any) => {
+  const response = await api.post('/problem/draft', draftData);
+  return response.data;
+};
+
+export const fetchDraftProblems = async (author?: string) => {
+  const params = author ? `?author=${encodeURIComponent(author)}` : '';
+  const response = await api.get(`/problem/drafts${params}`);
+  return response.data;
+};
+
+export const updateDraftProblem = async (id: string, draftData: any) => {
+  const response = await api.put(`/problem/draft/${id}`, draftData);
+  return response.data;
+};
+
+export const deleteDraftProblem = async (id: string) => {
+  const response = await api.delete(`/problem/draft/${id}`);
+  return response.data;
+};
+
+export const publishDraftProblem = async (id: string) => {
+  const response = await api.post(`/problem/draft/${id}/publish`);
+  return response.data;
+};
+
+export const toggleProblemVisibility = async (id: string) => {
+  const response = await api.put(`/problem/${id}/visibility`);
   return response.data;
 };
 

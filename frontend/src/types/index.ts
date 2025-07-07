@@ -29,6 +29,8 @@ export interface Problem {
   examples: Example[];
   isPublic: boolean;
   points: number;
+  visible: boolean;
+  uniqueUserSubmissions?: number;
 }
 
 export interface TestCase {

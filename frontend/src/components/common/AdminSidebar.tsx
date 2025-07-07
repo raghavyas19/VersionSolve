@@ -6,7 +6,7 @@ import { clsx } from 'clsx';
 const adminNavigation = [
   { name: 'Admin Dashboard', href: '/admin', icon: BarChart3 },
   { name: 'Manage Problems', href: '/admin/problems', icon: FileText },
-  { name: 'Manage Users', href: '/admin/users', icon: Users },
+  { name: 'Manage Users', href: '/admin/user', icon: Users },
   { name: 'System Settings', href: '/admin/settings', icon: Settings },
 ];
 

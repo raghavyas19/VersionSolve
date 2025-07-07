@@ -5,19 +5,27 @@ import {
   Trash2, 
   Eye, 
   Search, 
-  Filter,
-  Save,
   X,
-  CheckCircle2,
-  AlertCircle,
   Clock,
   MemoryStick
 } from 'lucide-react';
 import { Problem, TestCase } from '../../types';
-// import { mockProblems } from '../../data/mockData';
 import { DIFFICULTY_COLORS } from '../../utils/constants';
 import { clsx } from 'clsx';
-import { fetchProblems, createProblem, adminVerify, getAdminCsrfToken } from '../../utils/api';
+import {
+  fetchProblems,
+  createProblem,
+  adminVerify,
+  getAdminCsrfToken,
+  updateProblem,
+  deleteProblem,
+  createDraftProblem,
+  fetchDraftProblems,
+  updateDraftProblem,
+  deleteDraftProblem,
+  publishDraftProblem,
+  toggleProblemVisibility
+} from '../../utils/api';
 import { useNavigate } from 'react-router-dom';
 
 const ProblemManager: React.FC = () => {
@@ -43,8 +51,22 @@ const ProblemManager: React.FC = () => {
     points: 100,
     isPublic: true,
     examples: [{ input: '', output: '', explanation: '' }],
-    testCases: [{ input: '', expectedOutput: '', isHidden: false, points: 10 }]
+    testCases: [{ input: '', output: '', isHidden: false, points: 10 }]
   });
+
+  const [touched, setTouched] = useState<any>({});
+  const [fieldErrors, setFieldErrors] = useState<any>({});
+
+  const [drafts, setDrafts] = useState<any[]>([]);
+  const [toasts, setToasts] = useState<{ id: number; message: string }[]>([]);
+
+  const showToast = (message: string) => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, message }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 2000);
+  };
 
   useEffect(() => {
     const fetchAdmin = async () => {
@@ -76,7 +98,56 @@ const ProblemManager: React.FC = () => {
     loadProblems();
   }, []);
 
+  useEffect(() => {
+    const loadDrafts = async () => {
+      if (admin?.username) {
+        try {
+          const data = await fetchDraftProblems(admin.username);
+          setDrafts(data);
+        } catch (err) {
+          // Optionally handle error
+        }
+      }
+    };
+    loadDrafts();
+  }, [admin]);
+
   const handleSaveProblem = async () => {
+    const errors: any = {};
+    if (!formData.title || formData.title.trim().length < 5) {
+      errors.title = 'Title is required and must be at least 5 characters.';
+    }
+    if (!formData.description || formData.description.trim().length < 10) {
+      errors.description = 'Description is required and must be at least 10 characters.';
+    }
+    if (!formData.difficulty || !['Easy', 'Medium', 'Hard'].includes(formData.difficulty)) {
+      errors.difficulty = 'Difficulty is required.';
+    }
+    if (!formData.testCases || formData.testCases.length < 1) {
+      errors.testCases = 'At least one test case is required.';
+    } else {
+      errors.testCases = formData.testCases.map((tc: any, i: number) => {
+        const tcErr: any = {};
+        if (!tc.input || tc.input.trim() === '') tcErr.input = 'Please fill this field';
+        if (!tc.output || tc.output.trim() === '') tcErr.output = 'Please fill this field';
+        return tcErr;
+      });
+    }
+    setFieldErrors(errors);
+    setTouched({
+      title: true,
+      description: true,
+      difficulty: true,
+      testCases: formData.testCases.map(() => ({ input: true, output: true })),
+    });
+    if (
+      errors.title ||
+      errors.description ||
+      errors.difficulty ||
+      (errors.testCases && errors.testCases.some((tc: any) => tc.input || tc.output))
+    ) {
+      return;
+    }
     setSaving(true);
     try {
       const newProblem: any = {
@@ -92,23 +163,71 @@ const ProblemManager: React.FC = () => {
         testCases: formData.testCases.map((tc, index) => ({
           id: `tc-${index}`,
           input: tc.input,
-          expectedOutput: tc.expectedOutput,
+          expectedOutput: tc.output,
           isHidden: tc.isHidden,
           points: tc.points
         })),
         submissions: editingProblem?.submissions || 0,
         acceptanceRate: editingProblem?.acceptanceRate || 0,
-        author: 'admin',
-        // createdAt will be set by backend
+        author: admin?.username || 'admin',
       };
-      const { problem } = await createProblem(newProblem, csrfToken);
-      setProblems(editingProblem
-        ? problems.map(p => p.id === editingProblem.id ? problem : p)
-        : [...problems, problem]
-      );
+      if (editingProblem) {
+        const { problem } = await updateProblem(editingProblem.id, newProblem);
+        setProblems(problems.map(p => p.id === editingProblem.id ? problem : p));
+      } else {
+        const { problem } = await createProblem(newProblem, csrfToken);
+        setProblems([...problems, problem]);
+      }
       setShowCreateModal(false);
     } catch (err) {
       setError('Failed to save problem');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    // Only allow saving if title is present
+    if (!formData.title) {
+      showToast('Title is required to save a draft.');
+      return;
+    }
+    setSaving(true);
+    try {
+      const draftData: any = {
+        title: formData.title,
+        description: formData.description,
+        difficulty: formData.difficulty,
+        tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+        timeLimit: formData.timeLimit,
+        memoryLimit: formData.memoryLimit,
+        points: formData.points,
+        isPublic: false,
+        examples: formData.examples.filter(ex => ex.input || ex.output),
+        testCases: formData.testCases.map((tc, index) => ({
+          id: `tc-${index}`,
+          input: tc.input,
+          expectedOutput: tc.output,
+          isHidden: tc.isHidden,
+          points: tc.points
+        })),
+        submissions: editingProblem?.submissions || 0,
+        acceptanceRate: editingProblem?.acceptanceRate || 0,
+        author: admin?.username || 'admin',
+      };
+      if (editingProblem && (editingProblem as any)._isDraft) {
+        const { draft } = await updateDraftProblem((editingProblem as any)._id, draftData);
+      } else {
+        const { draft } = await createDraftProblem(draftData);
+      }
+      // Always re-fetch drafts after saving
+      if (admin?.username) {
+        const data = await fetchDraftProblems(admin.username);
+        setDrafts(data);
+      }
+      setShowCreateModal(false);
+    } catch (err) {
+      setError('Failed to save draft');
     } finally {
       setSaving(false);
     }
@@ -132,7 +251,7 @@ const ProblemManager: React.FC = () => {
       points: 100,
       isPublic: true,
       examples: [{ input: '', output: '', explanation: '' }],
-      testCases: [{ input: '', expectedOutput: '', isHidden: false, points: 10 }]
+      testCases: [{ input: '', output: '', isHidden: false, points: 10 }]
     });
     setEditingProblem(null);
     setShowCreateModal(true);
@@ -148,10 +267,14 @@ const ProblemManager: React.FC = () => {
       memoryLimit: problem.memoryLimit,
       points: problem.points || 100,
       isPublic: problem.isPublic ?? true,
-      examples: problem.examples.length > 0 ? problem.examples : [{ input: '', output: '', explanation: '' }],
+      examples: problem.examples.length > 0 ? problem.examples.map(ex => ({
+        input: ex.input,
+        output: ex.output,
+        explanation: ex.explanation || ''
+      })) : [{ input: '', output: '', explanation: '' }],
       testCases: problem.testCases.map(tc => ({
         input: tc.input,
-        expectedOutput: tc.expectedOutput,
+        output: (tc as any).output || (tc as any).expectedOutput || '',
         isHidden: tc.isHidden,
         points: tc.points || 10
       }))
@@ -160,9 +283,14 @@ const ProblemManager: React.FC = () => {
     setShowCreateModal(true);
   };
 
-  const handleDeleteProblem = (problemId: string) => {
+  const handleDeleteProblem = async (problemId: string) => {
     if (confirm('Are you sure you want to delete this problem?')) {
-      setProblems(problems.filter(p => p.id !== problemId));
+      try {
+        await deleteProblem(problemId);
+        setProblems(problems.filter(p => p.id !== problemId));
+      } catch (err) {
+        alert('Failed to delete problem');
+      }
     }
   };
 
@@ -183,7 +311,7 @@ const ProblemManager: React.FC = () => {
   const addTestCase = () => {
     setFormData({
       ...formData,
-      testCases: [...formData.testCases, { input: '', expectedOutput: '', isHidden: false, points: 10 }]
+      testCases: [...formData.testCases, { input: '', output: '', isHidden: false, points: 10 }]
     });
   };
 
@@ -194,6 +322,59 @@ const ProblemManager: React.FC = () => {
     });
   };
 
+  const handleEditDraft = (draft: any) => {
+    setFormData({
+      title: draft.title,
+      description: draft.description || '',
+      difficulty: draft.difficulty || 'Easy',
+      tags: (draft.tags || []).join(', '),
+      timeLimit: draft.timeLimit || 1,
+      memoryLimit: draft.memoryLimit || 256,
+      points: draft.points || 100,
+      isPublic: false,
+      examples: draft.examples?.length > 0 ? draft.examples : [{ input: '', output: '', explanation: '' }],
+      testCases: draft.testCases?.length > 0 ? draft.testCases.map((tc: any) => ({
+        input: tc.input,
+        output: tc.expectedOutput || tc.output || '',
+        isHidden: tc.isHidden,
+        points: tc.points || 10
+      })) : [{ input: '', output: '', isHidden: false, points: 10 }]
+    });
+    setEditingProblem({ ...(draft as any), _isDraft: true });
+    setShowCreateModal(true);
+  };
+
+  const handleDeleteDraft = async (draftId: string) => {
+    if (confirm('Are you sure you want to delete this draft?')) {
+      try {
+        await deleteDraftProblem(draftId);
+        setDrafts(drafts.filter(d => d._id !== draftId));
+      } catch (err) {
+        alert('Failed to delete draft');
+      }
+    }
+  };
+
+  const handlePublishDraft = async (draft: any) => {
+    // Validate required fields before calling publish
+    const missing: string[] = [];
+    if (!draft.title) missing.push('Title');
+    if (!draft.description) missing.push('Description');
+    if (!draft.difficulty) missing.push('Difficulty');
+    if (!draft.testCases || draft.testCases.length === 0) missing.push('Test Cases');
+    if (missing.length > 0) {
+      showToast('Cannot publish: missing ' + missing.join(', '));
+      return;
+    }
+    try {
+      const { problem } = await publishDraftProblem(draft._id);
+      setProblems([...problems, problem]);
+      setDrafts(drafts.filter(d => d._id !== draft._id));
+    } catch (err: any) {
+      alert(err?.response?.data?.error || 'Failed to publish draft');
+    }
+  };
+
   if (loading) {
     return <div className="text-center py-12">Loading problems...</div>;
   }
@@ -202,7 +383,7 @@ const ProblemManager: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 overflow-x-hidden">
+    <div className="space-y-6 overflow-x-hidden px-2">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -210,6 +391,9 @@ const ProblemManager: React.FC = () => {
           <p className="mt-2 text-gray-600 dark:text-gray-400">
             Create, edit, and manage programming problems.
           </p>
+          <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            Total Problems: {problems.filter(p => p.isPublic).length}
+          </div>
         </div>
         
         <button
@@ -246,6 +430,46 @@ const ProblemManager: React.FC = () => {
         </select>
       </div>
 
+      {/* Drafts Table (above main table) */}
+      {admin && drafts.length > 0 && (
+        <div className="mb-6 max-w-md">
+          <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">Your Drafts</h2>
+          <div className="bg-gray-100 dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[320px]">
+                <thead className="bg-gray-200 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-700">
+                  <tr>
+                    <th className="px-0 py-2 w-8 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-r border-gray-300 dark:border-gray-700">#</th>
+                    <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Title</th>
+                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {drafts.map((draft, idx) => (
+                    <tr key={draft._id || idx} className="bg-gray-50 dark:bg-gray-900">
+                      <td className="px-0 py-2 w-8 text-sm text-gray-500 dark:text-gray-400 font-semibold border-r border-gray-300 dark:border-gray-700 text-center">{idx + 1}</td>
+                      <td className="px-2 py-2 text-sm font-medium text-gray-900 dark:text-white text-center truncate max-w-[120px]">{draft.title}</td>
+                      <td className="px-2 py-2 text-sm">
+                        <div className="flex gap-2 items-center">
+                          <button onClick={() => handleEditDraft(draft)} className="p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"><Edit className="h-4 w-4" /></button>
+                          <button onClick={() => handleDeleteDraft(draft._id)} className="p-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors"><Trash2 className="h-4 w-4" /></button>
+                          <button
+                            onClick={() => handlePublishDraft(draft)}
+                            className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs"
+                          >
+                            Publish
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Card layout for mobile */}
       <div className="md:hidden space-y-3">
         {filteredProblems.map((problem) => (
@@ -260,14 +484,14 @@ const ProblemManager: React.FC = () => {
               </span>
             </div>
             <div className="flex flex-wrap gap-1 text-xs text-gray-500 dark:text-gray-400 w-full break-words">
-              {problem.tags.map((tag) => (
-                <span key={tag} className="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded break-words">
+              {problem.tags.map((tag, idx) => (
+                <span key={tag + '-' + idx} className="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded break-words">
                   {tag}
                 </span>
               ))}
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs w-full break-words">
-              <span>{problem.submissions} submissions</span>
+              <span>{problem.uniqueUserSubmissions ?? 0} unique users</span>
               <span>{problem.acceptanceRate.toFixed(1)}% accepted</span>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs w-full break-words">
@@ -306,40 +530,31 @@ const ProblemManager: React.FC = () => {
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Problem
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Difficulty
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Limits
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Stats
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Actions
-                </th>
+                <th className="px-0 py-2 w-12 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-r border-gray-300 dark:border-gray-700">#</th>
+                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Problem</th>
+                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Difficulty</th>
+                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Limits</th>
+                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Stats</th>
+                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Author</th>
+                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredProblems.map((problem) => (
-                <tr key={problem.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                  <td className="px-6 py-4">
+              {filteredProblems.map((problem, idx) => (
+                <tr key={problem.id || idx} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                  <td className="px-0 py-4 w-12 border-r border-gray-300 dark:border-gray-700 text-center">{idx + 1}</td>
+                  <td className="px-3 py-4 text-center">
                     <div>
                       <div className="text-sm font-medium text-gray-900 dark:text-white">
                         {problem.title}
                       </div>
                       <div className="text-sm text-gray-500 dark:text-gray-400">
-                        ID: {problem.id} • {problem.tags.slice(0, 2).join(', ')}
+                        {problem.tags.slice(0, 2).join(', ')}
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-3 py-4 text-center">
                     <span className={clsx(
                       'inline-flex px-2 py-1 text-xs font-medium rounded-full',
                       DIFFICULTY_COLORS[problem.difficulty]
@@ -347,8 +562,8 @@ const ProblemManager: React.FC = () => {
                       {problem.difficulty}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                    <div className="flex items-center space-x-4">
+                  <td className="px-3 py-4 text-center">
+                    <div className="flex items-center justify-center space-x-4">
                       <span className="flex items-center space-x-1">
                         <Clock className="h-3 w-3 text-gray-400" />
                         <span>{problem.timeLimit}s</span>
@@ -359,34 +574,48 @@ const ProblemManager: React.FC = () => {
                       </span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                  <td className="px-3 py-4 text-center">
                     <div>
-                      <div>{problem.submissions} submissions</div>
+                      <div>{problem.uniqueUserSubmissions ?? 0} Submissions</div>
                       <div className="text-xs text-gray-500 dark:text-gray-400">
                         {problem.acceptanceRate.toFixed(1)}% accepted
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <span className={clsx(
-                      'inline-flex px-2 py-1 text-xs font-medium rounded-full',
-                      problem.isPublic 
-                        ? 'text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900/20'
-                        : 'text-gray-600 bg-gray-50 dark:text-gray-400 dark:bg-gray-900/20'
-                    )}>
-                      {problem.isPublic ? 'Public' : 'Draft'}
-                    </span>
+                  <td className="px-3 py-4 text-center">
+                    <select
+                      className={clsx(
+                        'inline-flex px-2 py-1 text-xs font-medium rounded-full cursor-pointer',
+                        problem.visible
+                          ? 'text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900/20'
+                          : 'text-gray-600 bg-gray-50 dark:text-gray-400 dark:bg-gray-900/20'
+                      )}
+                      value={problem.visible ? 'visible' : 'hidden'}
+                      onChange={async (e) => {
+                        const newVisible = e.target.value === 'visible';
+                        if (newVisible !== problem.visible) {
+                          try {
+                            const { visible } = await toggleProblemVisibility(problem.id);
+                            setProblems(problems.map(p => p.id === problem.id ? { ...p, visible } : p));
+                          } catch {
+                            alert('Failed to update visibility');
+                          }
+                        }
+                      }}
+                      title={problem.visible ? 'Set to hidden' : 'Set to visible'}
+                    >
+                      <option value="visible">Visible</option>
+                      <option value="hidden">Hidden</option>
+                    </select>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center space-x-2">
+                  <td className="px-3 py-4 text-center">{problem.author}</td>
+                  <td className="px-3 py-4">
+                    <div className="flex items-center justify-center space-x-2">
                       <button
                         onClick={() => handleEditProblem(problem)}
                         className="p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
                       >
                         <Edit className="h-4 w-4" />
-                      </button>
-                      <button className="p-1 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 transition-colors">
-                        <Eye className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => handleDeleteProblem(problem.id)}
@@ -430,9 +659,12 @@ const ProblemManager: React.FC = () => {
                     type="text"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full px-3 py-2 border ${fieldErrors.title && touched.title ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                     placeholder="Enter problem title"
                   />
+                  {fieldErrors.title && touched.title && (
+                    <div className="text-xs text-red-500 mt-1">{fieldErrors.title}</div>
+                  )}
                 </div>
 
                 <div>
@@ -442,12 +674,15 @@ const ProblemManager: React.FC = () => {
                   <select
                     value={formData.difficulty}
                     onChange={(e) => setFormData({ ...formData, difficulty: e.target.value as any })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full px-3 py-2 border ${fieldErrors.difficulty && touched.difficulty ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                   >
                     <option value="Easy">Easy</option>
                     <option value="Medium">Medium</option>
                     <option value="Hard">Hard</option>
                   </select>
+                  {fieldErrors.difficulty && touched.difficulty && (
+                    <div className="text-xs text-red-500 mt-1">{fieldErrors.difficulty}</div>
+                  )}
                 </div>
 
                 <div>
@@ -458,11 +693,14 @@ const ProblemManager: React.FC = () => {
                     type="number"
                     value={formData.timeLimit}
                     onChange={(e) => setFormData({ ...formData, timeLimit: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full px-3 py-2 border ${fieldErrors.timeLimit && touched.timeLimit ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                     min="1"
                     max="30"
                   />
                   <p className="text-xs text-gray-500 mt-1">Max allowed: 30 seconds</p>
+                  {fieldErrors.timeLimit && touched.timeLimit && (
+                    <div className="text-xs text-red-500 mt-1">{fieldErrors.timeLimit}</div>
+                  )}
                 </div>
 
                 <div>
@@ -473,11 +711,14 @@ const ProblemManager: React.FC = () => {
                     type="number"
                     value={formData.memoryLimit}
                     onChange={(e) => setFormData({ ...formData, memoryLimit: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full px-3 py-2 border ${fieldErrors.memoryLimit && touched.memoryLimit ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                     min="64"
                     max="1024"
                   />
                   <p className="text-xs text-gray-500 mt-1">Max allowed: 1024 MB</p>
+                  {fieldErrors.memoryLimit && touched.memoryLimit && (
+                    <div className="text-xs text-red-500 mt-1">{fieldErrors.memoryLimit}</div>
+                  )}
                 </div>
 
                 <div>
@@ -488,10 +729,13 @@ const ProblemManager: React.FC = () => {
                     type="number"
                     value={formData.points}
                     onChange={(e) => setFormData({ ...formData, points: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full px-3 py-2 border ${fieldErrors.points && touched.points ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                     min="10"
                     max="1000"
                   />
+                  {fieldErrors.points && touched.points && (
+                    <div className="text-xs text-red-500 mt-1">{fieldErrors.points}</div>
+                  )}
                 </div>
 
                 <div>
@@ -502,9 +746,12 @@ const ProblemManager: React.FC = () => {
                     type="text"
                     value={formData.tags}
                     onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full px-3 py-2 border ${fieldErrors.tags && touched.tags ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                     placeholder="Array, Dynamic Programming, Graph"
                   />
+                  {fieldErrors.tags && touched.tags && (
+                    <div className="text-xs text-red-500 mt-1">{fieldErrors.tags}</div>
+                  )}
                 </div>
               </div>
 
@@ -517,9 +764,12 @@ const ProblemManager: React.FC = () => {
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={8}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full px-3 py-2 border ${fieldErrors.description && touched.description ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                   placeholder="Enter problem description with constraints and requirements..."
                 />
+                {fieldErrors.description && touched.description && (
+                  <div className="text-xs text-red-500 mt-1">{fieldErrors.description}</div>
+                )}
               </div>
 
               {/* Examples */}
@@ -537,15 +787,15 @@ const ProblemManager: React.FC = () => {
                   </button>
                 </div>
                 
-                {formData.examples.map((example, index) => (
-                  <div key={index} className="mb-4 p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
+                {formData.examples.map((example, idx) => (
+                  <div key={idx} className="mb-4 p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Example {index + 1}
+                        Example {idx + 1}
                       </span>
                       {formData.examples.length > 1 && (
                         <button
-                          onClick={() => removeExample(index)}
+                          onClick={() => removeExample(idx)}
                           className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                         >
                           <X className="h-4 w-4" />
@@ -560,12 +810,19 @@ const ProblemManager: React.FC = () => {
                           value={example.input}
                           onChange={(e) => {
                             const newExamples = [...formData.examples];
-                            newExamples[index].input = e.target.value;
+                            newExamples[idx].input = e.target.value;
                             setFormData({ ...formData, examples: newExamples });
+                            setTouched((prev: any) => ({
+                              ...prev,
+                              examples: prev.examples ? prev.examples.map((ex: any, i: number) => i === idx ? { ...ex, input: true } : ex) : []
+                            }));
                           }}
                           rows={3}
-                          className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                          className={`w-full px-2 py-1 text-sm border ${fieldErrors.examples && fieldErrors.examples[idx] && fieldErrors.examples[idx].input && touched.examples && touched.examples[idx]?.input ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:border-transparent`}
                         />
+                        {fieldErrors.examples && fieldErrors.examples[idx] && fieldErrors.examples[idx].input && touched.examples && touched.examples[idx]?.input && (
+                          <div className="text-xs text-red-500 mt-1">{fieldErrors.examples[idx].input}</div>
+                        )}
                       </div>
                       
                       <div>
@@ -574,12 +831,19 @@ const ProblemManager: React.FC = () => {
                           value={example.output}
                           onChange={(e) => {
                             const newExamples = [...formData.examples];
-                            newExamples[index].output = e.target.value;
+                            newExamples[idx].output = e.target.value;
                             setFormData({ ...formData, examples: newExamples });
+                            setTouched((prev: any) => ({
+                              ...prev,
+                              examples: prev.examples ? prev.examples.map((ex: any, i: number) => i === idx ? { ...ex, output: true } : ex) : []
+                            }));
                           }}
                           rows={3}
-                          className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                          className={`w-full px-2 py-1 text-sm border ${fieldErrors.examples && fieldErrors.examples[idx] && fieldErrors.examples[idx].output && touched.examples && touched.examples[idx]?.output ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:border-transparent`}
                         />
+                        {fieldErrors.examples && fieldErrors.examples[idx] && fieldErrors.examples[idx].output && touched.examples && touched.examples[idx]?.output && (
+                          <div className="text-xs text-red-500 mt-1">{fieldErrors.examples[idx].output}</div>
+                        )}
                       </div>
                     </div>
                     
@@ -590,11 +854,18 @@ const ProblemManager: React.FC = () => {
                         value={example.explanation || ''}
                         onChange={(e) => {
                           const newExamples = [...formData.examples];
-                          newExamples[index].explanation = e.target.value;
+                          newExamples[idx].explanation = e.target.value;
                           setFormData({ ...formData, examples: newExamples });
+                          setTouched((prev: any) => ({
+                            ...prev,
+                            examples: prev.examples ? prev.examples.map((ex: any, i: number) => i === idx ? { ...ex, explanation: true } : ex) : []
+                          }));
                         }}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                        className={`w-full px-2 py-1 text-sm border ${fieldErrors.examples && fieldErrors.examples[idx] && fieldErrors.examples[idx].explanation && touched.examples && touched.examples[idx]?.explanation ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:border-transparent`}
                       />
+                      {fieldErrors.examples && fieldErrors.examples[idx] && fieldErrors.examples[idx].explanation && touched.examples && touched.examples[idx]?.explanation && (
+                        <div className="text-xs text-red-500 mt-1">{fieldErrors.examples[idx].explanation}</div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -615,11 +886,11 @@ const ProblemManager: React.FC = () => {
                   </button>
                 </div>
                 
-                {formData.testCases.map((testCase, index) => (
-                  <div key={index} className="mb-4 p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
+                {formData.testCases.map((testCase, idx) => (
+                  <div key={idx} className="mb-4 p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Test Case {index + 1}
+                        Test Case {idx + 1}
                       </span>
                       <div className="flex items-center space-x-2">
                         <label className="flex items-center space-x-1">
@@ -628,8 +899,12 @@ const ProblemManager: React.FC = () => {
                             checked={testCase.isHidden}
                             onChange={(e) => {
                               const newTestCases = [...formData.testCases];
-                              newTestCases[index].isHidden = e.target.checked;
+                              newTestCases[idx].isHidden = e.target.checked;
                               setFormData({ ...formData, testCases: newTestCases });
+                              setTouched((prev: any) => ({
+                                ...prev,
+                                testCases: prev.testCases ? prev.testCases.map((tc: any, i: number) => i === idx ? { ...tc, isHidden: true } : tc) : []
+                              }));
                             }}
                             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                           />
@@ -637,7 +912,7 @@ const ProblemManager: React.FC = () => {
                         </label>
                         {formData.testCases.length > 1 && (
                           <button
-                            onClick={() => removeTestCase(index)}
+                            onClick={() => removeTestCase(idx)}
                             className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                           >
                             <X className="h-4 w-4" />
@@ -653,26 +928,40 @@ const ProblemManager: React.FC = () => {
                           value={testCase.input}
                           onChange={(e) => {
                             const newTestCases = [...formData.testCases];
-                            newTestCases[index].input = e.target.value;
+                            newTestCases[idx].input = e.target.value;
                             setFormData({ ...formData, testCases: newTestCases });
+                            setTouched((prev: any) => ({
+                              ...prev,
+                              testCases: prev.testCases ? prev.testCases.map((tc: any, i: number) => i === idx ? { ...tc, input: true } : tc) : []
+                            }));
                           }}
                           rows={3}
-                          className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                          className={`w-full px-2 py-1 text-sm border ${fieldErrors.testCases && fieldErrors.testCases[idx] && fieldErrors.testCases[idx].input && touched.testCases && touched.testCases[idx]?.input ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:border-transparent`}
                         />
+                        {fieldErrors.testCases && fieldErrors.testCases[idx] && fieldErrors.testCases[idx].input && touched.testCases && touched.testCases[idx]?.input && (
+                          <div className="text-xs text-red-500 mt-1">{fieldErrors.testCases[idx].input}</div>
+                        )}
                       </div>
                       
                       <div>
-                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Expected Output *</label>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Output *</label>
                         <textarea
-                          value={testCase.expectedOutput}
+                          value={testCase.output}
                           onChange={(e) => {
                             const newTestCases = [...formData.testCases];
-                            newTestCases[index].expectedOutput = e.target.value;
+                            newTestCases[idx].output = e.target.value;
                             setFormData({ ...formData, testCases: newTestCases });
+                            setTouched((prev: any) => ({
+                              ...prev,
+                              testCases: prev.testCases ? prev.testCases.map((tc: any, i: number) => i === idx ? { ...tc, output: true } : tc) : []
+                            }));
                           }}
                           rows={3}
-                          className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                          className={`w-full px-2 py-1 text-sm border ${fieldErrors.testCases && fieldErrors.testCases[idx] && fieldErrors.testCases[idx].output && touched.testCases && touched.testCases[idx]?.output ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:border-transparent`}
                         />
+                        {fieldErrors.testCases && fieldErrors.testCases[idx] && fieldErrors.testCases[idx].output && touched.testCases && touched.testCases[idx]?.output && (
+                          <div className="text-xs text-red-500 mt-1">{fieldErrors.testCases[idx].output}</div>
+                        )}
                       </div>
                     </div>
                     
@@ -683,13 +972,20 @@ const ProblemManager: React.FC = () => {
                         value={testCase.points}
                         onChange={(e) => {
                           const newTestCases = [...formData.testCases];
-                          newTestCases[index].points = Number(e.target.value);
+                          newTestCases[idx].points = Number(e.target.value);
                           setFormData({ ...formData, testCases: newTestCases });
+                          setTouched((prev: any) => ({
+                            ...prev,
+                            testCases: prev.testCases ? prev.testCases.map((tc: any, i: number) => i === idx ? { ...tc, points: true } : tc) : []
+                          }));
                         }}
                         min="1"
                         max="100"
-                        className="w-24 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                        className={`w-24 px-2 py-1 text-sm border ${fieldErrors.testCases && fieldErrors.testCases[idx] && fieldErrors.testCases[idx].points && touched.testCases && touched.testCases[idx]?.points ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:border-transparent`}
                       />
+                      {fieldErrors.testCases && fieldErrors.testCases[idx] && fieldErrors.testCases[idx].points && touched.testCases && touched.testCases[idx]?.points && (
+                        <div className="text-xs text-red-500 mt-1">{fieldErrors.testCases[idx].points}</div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -717,16 +1013,42 @@ const ProblemManager: React.FC = () => {
                 Cancel
               </button>
               <button
+                onClick={handleSaveDraft}
+                className="flex items-center space-x-2 px-4 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition-colors"
+              >
+                <span>Save as Draft</span>
+              </button>
+              <button
                 onClick={handleSaveProblem}
                 className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
-                <Save className="h-4 w-4" />
-                <span>{editingProblem ? 'Update Problem' : 'Create Problem'}</span>
+                <span>{editingProblem ? 'Update Problem' : 'Add Problem'}</span>
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Render toasts at the top-right */}
+      <div className="fixed top-4 right-4 z-50 space-y-2">
+        {toasts.map((toast) => (
+          <div key={toast.id} className="bg-red-600 text-white px-4 py-2 rounded shadow text-sm animate-fade-in-out">
+            {toast.message}
+          </div>
+        ))}
+      </div>
+
+      <style>{`
+      @keyframes fade-in-out {
+        0% { opacity: 0; transform: translateY(-10px); }
+        10% { opacity: 1; transform: translateY(0); }
+        90% { opacity: 1; transform: translateY(0); }
+        100% { opacity: 0; transform: translateY(-10px); }
+      }
+      .animate-fade-in-out {
+        animation: fade-in-out 2s both;
+      }
+      `}</style>
     </div>
   );
 };

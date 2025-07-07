@@ -21,7 +21,10 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ admin }) => {
       <div className="flex items-center space-x-4">
         <div className="flex items-center space-x-2">
           <UserIcon className="h-6 w-6 text-gray-500 dark:text-gray-300" />
-          <span className="font-medium text-gray-900 dark:text-white">{admin?.name}</span>
+          <div className="flex flex-col">
+            <span className="text-xs text-gray-500 dark:text-gray-400 leading-none">admin</span>
+            <span className="font-medium text-gray-900 dark:text-white">{admin?.name}</span>
+          </div>
         </div>
         <button onClick={handleLogout} className="flex items-center space-x-1 px-3 py-1 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900 transition-colors">
           <LogOut className="h-5 w-5" />
